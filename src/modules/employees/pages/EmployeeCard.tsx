@@ -33,17 +33,30 @@ const EmployeeCard: React.FC = () => {
 
   const [employees, setEmployees] = useState<Employee[]>(fakeEmployees);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const { handleEdit, handleDelete, handleView } = useEmployeeActions();
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-  const handleAddEmployee = (newEmployee: Employee) => {
-    setEmployees([...employees, newEmployee]);
+  const { handleEdit, handleDelete, handleView } = useEmployeeActions(setEditingEmployee,setIsModalVisible);
+
+  const handleAddEmployee = (employee: Employee) => {
+    if (editingEmployee) {
+      setEmployees((prev) =>
+        prev.map((item) =>
+          item.id === editingEmployee.id ? { ...employee, id: editingEmployee.id } : item
+        )
+      );
+      setEditingEmployee(null);
+    } else {
+      setEmployees([...employees, employee]);
+    }
   };
 
   const showModal = () => {
+    setEditingEmployee(null);
     setIsModalVisible(true);
   };
 
   const handleCancel = () => {
+    setEditingEmployee(null);
     setIsModalVisible(false);
   };
 
@@ -63,7 +76,14 @@ const EmployeeCard: React.FC = () => {
       title: "Chức vụ",
       dataIndex: "department",
       key: "department",
-      render: (text: string) => (text === "chef" ? "Chef" : "Waiter"),
+      render: (text: string) => {
+        const map: Record<string, string> = {
+          chef: "Chef",
+          waiter: "Waiter",
+          manager: "Manager",
+        };
+        return map[text] || text;
+      },
     },
     {
       title: "Mã chức vụ",
@@ -146,6 +166,7 @@ const EmployeeCard: React.FC = () => {
         visible={isModalVisible}
         onCancel={handleCancel}
         onAdd={handleAddEmployee}
+        editingEmployee={editingEmployee}
       />
     </div>
   );
