@@ -35,13 +35,17 @@ const EmployeeCard: React.FC = () => {
 
   const [employees, setEmployees] = useState<Employee[]>(fakeEmployees);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const { handleEdit, handleDelete, handleView } = useEmployeeActions();
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   const [searchText, setSearchText] = useState("");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
-
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  const { handleEdit, handleDelete, handleView } = useEmployeeActions(
+    setEditingEmployee,
+    setIsModalVisible
+  );
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
@@ -55,18 +59,36 @@ const EmployeeCard: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = filteredEmployees.slice(startIndex, startIndex + pageSize);
 
-  const handleAddEmployee = (newEmployee: Employee) => {
-    setEmployees([...employees, newEmployee]);
+  const handleAddEmployee = (employee: Employee) => {
+    if (editingEmployee) {
+      setEmployees((prev) =>
+        prev.map((item) =>
+          item.id === editingEmployee.id ? { ...employee, id: editingEmployee.id } : item
+        )
+      );
+      setEditingEmployee(null);
+    } else {
+      setEmployees([...employees, employee]);
+    }
+    setIsModalVisible(false);
   };
 
-  const handleCancel = () => setIsModalVisible(false);
+  const handleCancel = () => {
+    setEditingEmployee(null);
+    setIsModalVisible(false);
+  };
+
+  const showModal = () => {
+    setEditingEmployee(null);
+    setIsModalVisible(true);
+  };
 
   const columns: ColumnsType<Employee> = [
     {
       title: "STT",
       dataIndex: "stt",
       key: "stt",
-      render: (text: string, record: Employee, index: number) => index + 1,
+      render: (_: string, __: Employee, index: number) => index + 1,
     },
     {
       title: "Tên",
@@ -77,8 +99,14 @@ const EmployeeCard: React.FC = () => {
       title: "Chức vụ",
       dataIndex: "department",
       key: "department",
-      render: (text: string) =>
-        text === "chef" ? "Chef" : text === "waiter" ? "Waiter" : "Manager",
+      render: (text: string) => {
+        const map: Record<string, string> = {
+          chef: "Chef",
+          waiter: "Waiter",
+          manager: "Manager",
+        };
+        return map[text] || text;
+      },
     },
     {
       title: "Mã chức vụ",
@@ -148,7 +176,7 @@ const EmployeeCard: React.FC = () => {
       >
         <Space>
           {currentPerm?.permissions.add && (
-            <Button type="primary" onClick={() => setIsModalVisible(true)}>
+            <Button type="primary" onClick={showModal}>
               Thêm mới
             </Button>
           )}
@@ -212,6 +240,7 @@ const EmployeeCard: React.FC = () => {
         visible={isModalVisible}
         onCancel={handleCancel}
         onAdd={handleAddEmployee}
+        editingEmployee={editingEmployee}
       />
     </div>
   );
