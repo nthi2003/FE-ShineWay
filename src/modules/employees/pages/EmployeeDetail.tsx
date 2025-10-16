@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Button, Input, Typography, Switch, Timeline, Modal, Form, Select, DatePicker } from 'antd';
-import { CalendarOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { CalendarOutlined, ArrowLeftOutlined, EditOutlined, SaveOutlined, DeleteOutlined } from '@ant-design/icons';
 import { fakeEmployees } from '../data/employee.ts';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BACKGROUND_BLUE } from '../constants/index.ts';
@@ -92,148 +92,163 @@ const EmployeeDetail: React.FC = () => {
 
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* LEFT SIDE */}
-            <Card className="shadow-md rounded-2xl" styles={{ body: { paddingLeft: 0 } }}>
-               <div className="flex flex-row gap-4 items-start">
+            <Card className="shadow-md rounded-2xl">
+               <div className="flex flex-col items-center">
                   {/* Avatar */}
-                  <div className="flex flex-col items-center w-[260px]">
-                     <div className="w-full flex items-center justify-center mb-3">
-                        <Text className="text-lg font-semibold text-gray-700">Ảnh đại diện</Text>
+                  <div className="w-full flex flex-row justify-around items-center mb-6">
+                     {/* Avatar bên trái */}
+                     <div className="flex flex-col items-center">
+                        <Text className="text-lg font-semibold text-gray-700 mb-2">Ảnh đại diện</Text>
+                        <img
+                           src="https://upload.wikimedia.org/wikipedia/commons/8/8c/Cristiano_Ronaldo_2018.jpg"
+                           alt="avatar"
+                           className="w-32 h-32 rounded-xl object-cover border shadow-sm hover:scale-105 transition-transform"
+                        />
+                        <a href="#" className="text-blue-500 mt-2 text-sm hover:underline">
+                           Thay đổi ảnh đại diện
+                        </a>
                      </div>
-                     <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/8/8c/Cristiano_Ronaldo_2018.jpg"
-                        alt="avatar"
-                        className="w-48 h-48 rounded-xl object-cover border"
-                     />
-                     <a href="#" className="text-blue-500 mt-2 text-sm">
-                        Thay đổi ảnh đại diện
-                     </a>
 
-                     {!isEditing ? (
+                     {/* Nút bên phải */}
+                     <div className="flex flex-col gap-3 mt-4 w-48">
+                        {!isEditing ? (
+                           <Button
+                              type="primary"
+                              icon={<EditOutlined />}
+                              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 bg-blue-500 hover:bg-blue-600 border-none"
+                              onClick={() => {
+                                 setIsEditing(true);
+                                 form.setFieldsValue({
+                                    ...employeeData,
+                                    createdAt: dayjs(employeeData.createdAt),
+                                 });
+                              }}
+                           >
+                              Cập nhật thông tin
+                           </Button>
+                        ) : (
+                           <Button
+                              type="primary"
+                              icon={<SaveOutlined />}
+                              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 !bg-green-600 hover:!bg-green-700 !border-none"
+                              onClick={handleSave}
+                           >
+                              Lưu thay đổi
+                           </Button>
+                        )}
+
                         <Button
                            type="primary"
-                           className="mt-4 w-48 rounded-xl font-bold"
-                           onClick={() => {
-                              setIsEditing(true);
-                              form.setFieldsValue({
-                                 ...employeeData,
-                                 createdAt: dayjs(employeeData.createdAt),
-                              });
-                           }}
+                           danger
+                           icon={<DeleteOutlined />}
+                           className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl font-semibold shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-200 bg-red-500 hover:bg-red-600 border-none"
+                           onClick={handleDelete}
                         >
-                           Cập nhật thông tin
+                           Xóa thông tin
                         </Button>
-                     ) : (
-                        <Button
-                           type="primary"
-                           className="mt-4 w-48 rounded-xl font-bold !bg-green-600 hover:!bg-green-700 !border-none"
-                           onClick={handleSave}
-                        >
-                           Lưu
-                        </Button>
-                     )}
-
-                     <Button type="primary" danger className="mt-2 w-48 rounded-xl font-bold" onClick={handleDelete}>
-                        Xóa thông tin
-                     </Button>
+                     </div>
                   </div>
 
                   {/* Info Form */}
-                  <div className="flex-1 pr-6">
+                  <div className="w-full">
                      <div className="w-full flex items-center mb-3">
                         <Text className="text-lg font-semibold text-gray-700">Thông tin cá nhân</Text>
                      </div>
 
                      <Form
                         layout="vertical"
-                        className="[&_.ant-form-item]:mb-2 [&_.ant-form-item-label]:mb-0"
                         form={form}
                         initialValues={{
                            ...employeeData,
                            createdAt: dayjs(employeeData.createdAt),
                         }}
                         disabled={!isEditing}
+                        requiredMark={false}
+                        className="
+                                    [&_.ant-form-item]:mb-3
+                                    [&_.ant-form-item-label]:mb-1
+                                    [&_.ant-input-disabled]:!bg-white
+                                    [&_.ant-input-disabled]:!text-gray-800
+                                    [&_.ant-input-disabled]:!opacity-100
+                                    [&_.ant-select-disabled_.ant-select-selector]:!bg-white
+                                    [&_.ant-select-disabled_.ant-select-selector]:!text-gray-800
+                                    [&_.ant-select-disabled_.ant-select-selector]:!opacity-100
+                                    [&_.ant-picker-disabled]:!bg-white
+                                    [&_.ant-picker-disabled]:!text-gray-800
+                                    [&_.ant-picker-disabled]:!opacity-100
+                                    [&_.ant-picker-disabled_.ant-picker-input>input]:!text-gray-800
+                                    [&_.ant-picker-disabled_.ant-picker-input>input]:!opacity-100
+                                 "
                      >
-                        <Form.Item
-                           label="Họ và tên"
-                           name="fullname"
-                           rules={[{ required: true, message: 'Nhập họ tên' }]}
-                        >
-                           <Input placeholder="Nhập họ tên" />
-                        </Form.Item>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                           <Form.Item
+                              label="Họ và tên"
+                              name="fullname"
+                              rules={[{ required: true, message: 'Nhập họ tên' }]}
+                           >
+                              <Input placeholder="Nhập họ tên" />
+                           </Form.Item>
 
-                        <Form.Item
-                           label="Chức vụ"
-                           name="department"
-                           rules={[{ required: true, message: 'Chọn chức vụ' }]}
-                        >
-                           <Select
-                              options={[
-                                 { value: 'chef', label: 'Bếp trưởng' },
-                                 { value: 'waiter', label: 'Phục vụ' },
-                                 { value: 'manager', label: 'Quản lý' },
+                           <Form.Item
+                              label="Chức vụ"
+                              name="department"
+                              rules={[{ required: true, message: 'Chọn chức vụ' }]}
+                           >
+                              <Select
+                                 options={[
+                                    { value: 'chef', label: 'Bếp trưởng' },
+                                    { value: 'waiter', label: 'Phục vụ' },
+                                    { value: 'manager', label: 'Quản lý' },
+                                 ]}
+                              />
+                           </Form.Item>
+
+                           <Form.Item
+                              label="Số điện thoại"
+                              name="phone"
+                              rules={[
+                                 { required: true, message: 'Vui lòng nhập số điện thoại' },
+                                 {
+                                    pattern: /^(?:\+84|0)(3|5|7|8|9)[0-9]{8}$/,
+                                    message: 'Số điện thoại Việt Nam không hợp lệ',
+                                 },
                               ]}
-                           />
-                        </Form.Item>
+                           >
+                              <Input placeholder="VD: 0901234567 hoặc +84901234567" />
+                           </Form.Item>
 
-                        <Form.Item
-                           label="Số điện thoại"
-                           name="phone"
-                           rules={[
-                              { required: true, message: 'Vui lòng nhập số điện thoại' },
-                              {
-                                 pattern: /^(?:\+84|0)(3|5|7|8|9)[0-9]{8}$/,
-                                 message: 'Số điện thoại Việt Nam không hợp lệ',
-                              },
-                           ]}
-                        >
-                           <Input placeholder="VD: 0901234567 hoặc +84901234567" />
-                        </Form.Item>
+                           <Form.Item label="Ngày sinh" name="dateOfBirth">
+                              <Input placeholder="dd/mm/yyyy" />
+                           </Form.Item>
 
-                        <Form.Item
-                           label="Ngày sinh"
-                           name="dateOfBirth"
-                           rules={[
-                              { required: true, message: 'Vui lòng nhập ngày sinh' },
-                              {
-                                 pattern: /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
-                                 message: 'Định dạng ngày sinh không hợp lệ (dd/mm/yyyy)',
-                              },
-                           ]}
-                        >
-                           <Input placeholder="dd/mm/yyyy" />
-                        </Form.Item>
+                           <Form.Item label="Giới tính" name="gender">
+                              <Select
+                                 options={[
+                                    { value: 'Nam', label: 'Nam' },
+                                    { value: 'Nữ', label: 'Nữ' },
+                                 ]}
+                              />
+                           </Form.Item>
 
-                        <Form.Item
-                           label="Giới tính"
-                           name="gender"
-                           rules={[{ required: true, message: 'Chọn giới tính' }]}
-                        >
-                           <Select
-                              options={[
-                                 { value: 'Nam', label: 'Nam' },
-                                 { value: 'Nữ', label: 'Nữ' },
-                              ]}
-                           />
-                        </Form.Item>
+                           <Form.Item
+                              label="Email"
+                              name="email"
+                              rules={[{ type: 'email', message: 'Email không hợp lệ' }]}
+                           >
+                              <Input placeholder="Nhập email" />
+                           </Form.Item>
 
-                        <Form.Item
-                           label="Email"
-                           name="email"
-                           rules={[{ type: 'email', message: 'Email không hợp lệ' }]}
-                        >
-                           <Input placeholder="Nhập email" />
-                        </Form.Item>
+                           <Form.Item label="Ngày bắt đầu" name="createdAt">
+                              <DatePicker format="DD/MM/YYYY" className="w-full" />
+                           </Form.Item>
 
-                        <Form.Item label="Ngày bắt đầu" name="createdAt">
-                           <DatePicker format="DD/MM/YYYY" className="w-full" />
-                        </Form.Item>
-
-                        <Form.Item label="Địa chỉ" name="address">
-                           <Input placeholder="Nhập địa chỉ" />
-                        </Form.Item>
+                           <Form.Item label="Địa chỉ" name="address">
+                              <Input placeholder="Nhập địa chỉ" />
+                           </Form.Item>
+                        </div>
 
                         {/* Trạng thái */}
-                        <div>
+                        <div className="mt-3">
                            <Text strong className="text-gray-600 text-xs">
                               Trạng thái
                            </Text>
@@ -250,7 +265,7 @@ const EmployeeDetail: React.FC = () => {
                                  ? 'Đang trong ca làm'
                                  : employeeData.status === 'inactive'
                                  ? 'Đã nghỉ việc'
-                                 : 'Đang nghỉ phép'}
+                                 : 'Đang ngoài ca làm việc'}
                            </p>
                         </div>
                      </Form>
@@ -301,11 +316,21 @@ const EmployeeDetail: React.FC = () => {
                      }}
                   >
                      <div className="flex flex-col items-center justify-center py-4 relative">
-                        <div className="relative w-32 h-32 flex items-center justify-center">
-                           <CalendarOutlined className="text-[180px] text-gray-700" />
-                           <span className="mt-10 absolute text-5xl font-bold text-black">
-                              {employeeData.currentShift?.day ?? '-'}
-                           </span>
+                        <div className="relative flex flex-col items-center justify-center w-40 h-44 bg-white border-4 border-gray-700 rounded-xl shadow-md">
+                           {/* Thanh trên màu */}
+                           <div className="w-full bg-blue-500 text-white text-center py-1 font-semibold rounded-t-[6px]">
+                              {dayjs().format('MMMM').toUpperCase()} {/* Ví dụ: OCTOBER */}
+                           </div>
+
+                           {/* Ngày */}
+                           <div className="flex-1 flex flex-col items-center justify-center">
+                              <span className="mb-4 text-6xl font-bold text-gray-800 leading-none">
+                                 {employeeData.currentShift?.day ?? dayjs().date()}
+                              </span>
+                           </div>
+
+                           {/* Viền dưới */}
+                           <div className="absolute -bottom-1 w-36 h-1 bg-gray-700 rounded-md" />
                         </div>
                      </div>
                      <div className="mt-6 text-right px-3 pb-2">
@@ -326,13 +351,40 @@ const EmployeeDetail: React.FC = () => {
                      }}
                   >
                      <div className="flex flex-col items-center justify-center py-4">
-                        <Switch checked={employeeData.status === 'active'} onChange={handleStatus} className="mb-3" />
+                        <Text type="secondary" className="text-xs mb-2 block text-gray-500 max-w-[180px]">
+                           Chọn trang thái của tài khoản
+                        </Text>
+                        <Select
+                           value={employeeData.status}
+                           onChange={(value) =>
+                              setEmployeeData({
+                                 ...employeeData,
+                                 status: value,
+                              })
+                           }
+                           options={[
+                              { value: 'active', label: 'Đang trong ca làm việc' },
+                              { value: 'leave', label: 'Đang ngoài ca làm việc' },
+                              { value: 'inactive', label: 'Đã nghỉ việc' },
+                           ]}
+                        />
+
+                        {/* Btn thoát ca làm việc */}
+                        <Switch
+                           checked={employeeData.status === 'active' || employeeData.status === 'leave'}
+                           onChange={handleStatus}
+                           className="mt-10 mb-3"
+                        />
                         <p
                            className={`font-semibold ${
-                              employeeData.status === 'active' ? 'text-green-600' : 'text-red-500'
+                              employeeData.status === 'active' || employeeData.status === 'leave'
+                                 ? 'text-green-600'
+                                 : 'text-red-500'
                            }`}
                         >
-                           {employeeData.status === 'active' ? 'Còn hoạt động' : 'Không hoạt động'}
+                           {employeeData.status === 'active' || employeeData.status === 'leave'
+                              ? 'Còn hoạt động'
+                              : 'Không hoạt động'}
                         </p>
                         <Text type="secondary" className="text-xs mt-1 block text-gray-500 max-w-[180px]">
                            Gạt sang trái để tắt trạng thái hoạt động của tài khoản
