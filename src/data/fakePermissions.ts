@@ -71,13 +71,28 @@ export const fakePermissions: UserPermissions = {
       url: "/kho",
       subItems: [
         {
+          name: "Danh sách nguyên liệu",
+          url: "/kho/danh-sach-nguyen-lieu",
+          permissions: { view: true, add: false, edit: true, delete: true },
+        },
+        {
           name: "Phân loại",
           url: "/kho/phan-loai",
-          permissions: { view: true, add: false, edit: true, delete: true },
+          permissions: { view: true, add: true, edit: true, delete: true },
         },
         {
           name: "Sản phẩm",
           url: "/kho/san-pham",
+          permissions: { view: true, add: true, edit: true, delete: true },
+        },
+        {
+          name: "Lịch sử",
+          url: "/kho/lich-su",
+          permissions: { view: true, add: true, edit: true, delete: true },
+        },
+        {
+          name: "Thoát",
+          url: "/kho/thoat",
           permissions: { view: true, add: true, edit: true, delete: true },
         },
       ],

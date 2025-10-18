@@ -109,11 +109,11 @@ function AppLayout() {
           </Sider>
         )}
         <Content
-          className={`overflow-y-auto p-6 bg-gray-50 h-[calc(100vh-136px)] ${
-            isHome ? "ml-0" : "ml-[80px] md:ml-[306px]"
+          className={`overflow-hidden p-6 bg-white h-[calc(100vh-136px)] transition-all duration-300 ${
+            isHome ? "ml-0" : collapsed ? "ml-[80px]" : "ml-[306px]"
           }`}
         >
-          <div className="max-w-7xl mx-auto">
+          <div className="h-full">
             <Outlet /> {/* Outlet render HomePage hoặc sub-page */}
           </div>
         </Content>

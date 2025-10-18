@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Route, Routes, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -10,23 +9,24 @@ import AppLayout from "../ui/AppLayout.tsx";
 import Menu from "../components/Menu.tsx";
 import Dashboard from "../pages/Dashboard.tsx";
 import EmployeeDetail from "../modules/employees/pages/EmployeeDetail.tsx";
+import IngredientList from "../modules/warehouse/pages/IngredientList.tsx";
+import CategoryList from "../modules/warehouse/pages/CategoryList.tsx";
+import CategoryDetail from "../modules/warehouse/pages/CategoryDetail.tsx";
 
 // import CategoryPage from '../pages/CategoryPage';
 // import ProductPage from '../pages/ProductPage';
 
 const HomePage: React.FC = () => (
-
   <div>
     <Dashboard />
   </div>
-
-
 );
 
 const pageMap: { [key: string]: React.FC } = {
    '/nhan-su/thong-tin-nhan-vien': EmployeeInfoPage,
    '/nhan-su/chuc-vu': PositionPage,
-   //   '/kho/phan-loai': CategoryPage,
+   '/kho/danh-sach-nguyen-lieu': IngredientList,
+   '/kho/phan-loai': CategoryList,
    //   '/kho/san-pham': ProductPage,
 };
 
@@ -52,7 +52,6 @@ const DynamicRoutes: React.FC = () => {
       <Routes>
          <Route path="/login" element={<Navigate to="/" replace />} />
          <Route element={<AppLayout />}>
-            {' '}
             {/* AppLayout wrap tất cả routes sau login */}
             <Route path="/" element={<HomePage />} /> {/* Home chỉ Header + Menu, không sidebar */}
             {permissions.menus.map((menu) => (
@@ -72,6 +71,8 @@ const DynamicRoutes: React.FC = () => {
             {employeeSubItem?.permissions.view && (
                <Route path={`${employeeSubItem.url}/:employeeId`} element={<EmployeeDetail />} />
             )}
+            {/* Route chi tiết danh mục */}
+            <Route path="/kho/phan-loai/:categoryId/:categoryName" element={<CategoryDetail />} />
             <Route path="*" element={<div>404 Not Found</div>} />
          </Route>
       </Routes>

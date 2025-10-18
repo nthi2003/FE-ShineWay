@@ -1,0 +1,361 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { Table, Button, Input, Space, message } from "antd";
+import { ArrowLeftOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { Link, useNavigate } from "react-router-dom";
+import type { Category, Ingredient } from "../types/index.ts";
+import { fakeCategories } from "../data/categories.ts";
+import AddCategoryModal from "../components/AddCategoryModal.tsx";
+import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
+
+const { Search } = Input;
+
+const CategoryList: React.FC = () => {
+  const navigate = useNavigate();
+  
+  // Load từ localStorage hoặc dùng fakeCategories
+  const loadCategories = () => {
+    const saved = localStorage.getItem('categories');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error('Error loading categories:', e);
+        return fakeCategories;
+      }
+    }
+    return fakeCategories;
+  };
+
+  const [categories, setCategories] = useState<Category[]>(loadCategories());
+  const [searchText, setSearchText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [notification, setNotification] = useState<NotificationProps>({
+    type: 'success',
+    message: '',
+    visible: false,
+    onClose: () => setNotification(prev => ({ ...prev, visible: false }))
+  });
+
+  // Debug modal state
+  React.useEffect(() => {
+    console.log('Modal visible:', isModalVisible);
+    console.log('Editing category:', editingCategory);
+  }, [isModalVisible, editingCategory]);
+
+  // Load ingredients to calculate product count
+  const loadIngredients = () => {
+    const saved = localStorage.getItem('ingredients');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  };
+
+  const [allIngredients, setAllIngredients] = useState(loadIngredients());
+
+  // Function to get product count for a category
+  const getProductCount = (categoryName: string) => {
+    const count = allIngredients.filter((ingredient: Ingredient) => ingredient.category === categoryName).length;
+    console.log(`Product count for "${categoryName}":`, count);
+    return count;
+  };
+
+  // Reload ingredients when localStorage changes
+  useEffect(() => {
+    setAllIngredients(loadIngredients());
+  }, []);
+
+  // Lưu vào localStorage mỗi khi categories thay đổi
+  useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+    console.log('Saved to localStorage:', categories.length, 'categories');
+  }, [categories]);
+
+  // Filter categories based on search
+  const filteredCategories = useMemo(() => {
+    return categories.filter((item) =>
+      item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [categories, searchText]);
+
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedData = filteredCategories.slice(startIndex, startIndex + pageSize);
+
+  // Calculate totals
+  const totalProducts = categories.reduce((sum, cat) => sum + getProductCount(cat.name), 0);
+
+  const handleAddCategory = (categoryData: Omit<Category, "id">) => {
+    try {
+      if (editingCategory) {
+        // Edit existing category
+        setCategories((prev) =>
+          prev.map((item) =>
+            item.id === editingCategory.id
+              ? { ...categoryData, id: editingCategory.id, createdDate: categoryData.createdDate || editingCategory.createdDate }
+              : item
+          )
+        );
+        setEditingCategory(null);
+        setNotification({
+          type: 'success',
+          message: `Đã cập nhật danh mục "${categoryData.name}" thành công!`,
+          visible: true,
+          onClose: () => setNotification(prev => ({ ...prev, visible: false }))
+        });
+      } else {
+        // Add new category
+        const newCategory: Category = {
+          ...categoryData,
+          id: Date.now().toString(),
+        };
+        setCategories([...categories, newCategory]);
+        setNotification({
+          type: 'success',
+          message: `Đã thêm danh mục "${categoryData.name}" thành công!`,
+          visible: true,
+          onClose: () => setNotification(prev => ({ ...prev, visible: false }))
+        });
+      }
+      setIsModalVisible(false);
+    } catch (error) {
+      setNotification({
+        type: 'error',
+        message: 'Có lỗi xảy ra khi thêm/cập nhật danh mục!',
+        visible: true,
+        onClose: () => setNotification(prev => ({ ...prev, visible: false }))
+      });
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    const category = categories.find(item => item.id === id);
+    if (category && window.confirm(`Bạn có chắc muốn xóa danh mục "${category.name}"?`)) {
+      setCategories((prev) => prev.filter((item) => item.id !== id));
+      setNotification({
+        type: 'success',
+        message: `Đã xóa danh mục "${category.name}" thành công!`,
+        visible: true,
+        onClose: () => setNotification(prev => ({ ...prev, visible: false }))
+      });
+    }
+  };
+
+  const handleView = (record: Category) => {
+    navigate(`/kho/phan-loai/${record.id}/${encodeURIComponent(record.name)}`);
+  };
+
+  const handleEdit = (record: Category) => {
+    console.log('Edit clicked for category:', record);
+    setEditingCategory(record);
+    setIsModalVisible(true);
+    console.log('Modal should be visible now');
+  };
+
+  const handleCancel = () => {
+    setEditingCategory(null);
+    setIsModalVisible(false);
+  };
+
+  const showModal = () => {
+    setEditingCategory(null);
+    setIsModalVisible(true);
+  };
+
+  const columns: any[] = [
+    {
+      title: "Danh mục",
+      dataIndex: "name",
+      key: "name",
+      align: "center",
+      width: 150,
+      render: (text: string) => <span className="font-bold text-[#222222]">{text}</span>,
+    },
+    {
+      title: "Mô tả",
+      dataIndex: "description",
+      key: "description",
+      align: "center",
+      width: 250,
+      render: (text: string) => <span className="text-[#222222]">{text}</span>,
+    },
+    {
+      title: "Số sản phẩm",
+      dataIndex: "name",
+      key: "productCount",
+      align: "center",
+      width: 120,
+      render: (categoryName: string) => {
+        const count = getProductCount(categoryName);
+        return <span className="text-[#222222] font-bold">{count}</span>;
+      },
+    },
+    {
+      title: "Ngày tạo",
+      dataIndex: "createdDate",
+      key: "createdDate",
+      align: "center",
+      width: 120,
+      render: (date: string) => <span className="text-[#222222]">{date}</span>,
+    },
+    {
+      title: "Hành động",
+      key: "action",
+      align: "center",
+      width: 200,
+      render: (_: any, record: Category) => (
+        <Space size="small">
+          <Button
+            size="small"
+            className="bg-[#14933e] border-[#14933e] text-white font-bold text-xs hover:bg-[#14933e] hover:border-[#14933e]"
+            onClick={() => handleView(record)}
+          >
+            Xem
+          </Button>
+          <Button
+            type="primary"
+            size="small"
+            className="bg-[#5296e5] border-[#5296e5] text-white font-bold text-xs"
+            onClick={() => handleEdit(record)}
+          >
+            Sửa
+          </Button>
+          <Button
+            size="small"
+            className="bg-[#ff5f57] border-[#ff5f57] text-white font-bold text-xs hover:bg-[#ff5f57] hover:border-[#ff5f57]"
+            onClick={() => handleDelete(record.id)}
+          >
+            Xóa
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header with Back Button */}
+      <div className="flex items-center gap-3 mb-3 flex-shrink-0">
+        <Link to="/kho" className="flex items-center gap-2 text-[#0088ff] font-bold hover:text-[#0066cc]">
+          <ArrowLeftOutlined />
+          <span>Quay lại</span>
+        </Link>
+      </div>
+
+      {/* Title */}
+      <h1 className="text-2xl font-bold text-[#222222] mb-4 flex-shrink-0">
+        Quản lí phân loại
+      </h1>
+
+      {/* Stats Cards */}
+      <div className="flex gap-4 mb-4 flex-shrink-0">
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px]">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[#222222] font-bold text-xs">Tổng danh mục</p>
+            <div className="bg-gray-100 p-2 rounded">
+              <img src="/package.svg" alt="Package" className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-[#222222] font-bold text-4xl">{categories.length}</p>
+        </div>
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px]">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[#222222] font-bold text-xs">Tổng sản phẩm</p>
+            <div className="bg-gray-100 p-2 rounded">
+            <img src="/3d_box_fill.svg" alt="Package" className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-[#222222] font-bold text-4xl">{totalProducts}</p>
+        </div>
+      </div>
+
+      {/* Search and Add Button */}
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
+        <div className="relative w-[282px]">
+          <Search
+            placeholder="Tìm kiếm danh mục ..."
+            allowClear
+            prefix={<SearchOutlined className="text-gray-400" />}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="rounded-xl border-[#e0dbdb]"
+            size="large"
+          />
+        </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          size="large"
+          className="bg-[#0088ff] border-[#0088ff] shadow-lg px-6"
+          onClick={showModal}
+        >
+          Thêm danh mục
+        </Button>
+      </div>
+
+      {/* Table */}
+      <div className="bg-white border border-[rgba(0,0,0,0.16)] rounded-xl overflow-hidden flex-1 flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <Table
+            key={categories.length}
+            columns={columns}
+            dataSource={paginatedData}
+            rowKey="id"
+            scroll={{ x: 1000, y: 'calc(100vh - 500px)' }}
+            pagination={{
+              current: currentPage,
+              total: filteredCategories.length,
+              pageSize: pageSize,
+              showSizeChanger: false,
+              onChange: (page) => {
+                setCurrentPage(page);
+              },
+              position: ["bottomRight"],
+              className: "px-4",
+            }}
+            components={{
+              header: {
+                cell: (props: any) => (
+                  <th
+                    {...props}
+                    className="!bg-[rgba(242,242,242,0.53)] !text-[#222222] !font-bold !text-[15px] !border-b !border-[rgba(0,0,0,0.06)]"
+                  >
+                    {props.children}
+                  </th>
+                ),
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Modal */}
+      <AddCategoryModal
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        onOk={handleAddCategory}
+        editingCategory={editingCategory}
+      />
+
+      {/* Notification */}
+      <Notification
+        type={notification.type}
+        message={notification.message}
+        visible={notification.visible}
+        onClose={notification.onClose}
+      />
+    </div>
+  );
+};
+
+export default CategoryList;
+
