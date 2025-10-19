@@ -8,8 +8,9 @@ import { fakeIngredients } from "../data/ingredients.ts";
 import AddIngredientModal from "../components/AddIngredientModal.tsx";
 import ExportDropdown from "../components/ExportDropdown.tsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.tsx";
-import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
+
 import { exportToExcel, exportToPDF } from '../utils/exportUtils.ts';
+import type { NotificationProps } from "../../../components/Notification.tsx";
 
 const { Search } = Input;
 
@@ -601,13 +602,13 @@ const IngredientList: React.FC = () => {
       />
 
       {/* Notification */}
-      <Notification
+      {/* <Notification
         type={notification.type}
         message={notification.message}
         visible={notification.visible}
         onClose={notification.onClose}
         duration={4000}
-      />
+      /> */}
     </div>
   );
 };
