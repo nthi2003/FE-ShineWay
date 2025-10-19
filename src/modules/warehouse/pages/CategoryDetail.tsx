@@ -12,7 +12,7 @@ const { Search } = Input;
 const CategoryDetail: React.FC = () => {
   const { categoryId, categoryName } = useParams<{ categoryId: string; categoryName: string }>();
   
-  // Tải nguyên liệu từ localStorage
+  // Load ingredients from localStorage
   const loadIngredients = () => {
     const saved = localStorage.getItem('ingredients');
     if (saved) {
@@ -27,22 +27,22 @@ const CategoryDetail: React.FC = () => {
 
   const [allIngredients, setAllIngredients] = useState<Ingredient[]>(loadIngredients());
   
-  // Tải lại khi localStorage thay đổi
+  // Reload when localStorage changes
   useEffect(() => {
     setAllIngredients(loadIngredients());
   }, []);
   
-  // Lọc theo danh mục
+  // Filter by category
   const categoryIngredients = useMemo(() => {
     const currentCategory = decodeURIComponent(categoryName || '');
-    console.log('Lọc - Danh mục hiện tại:', currentCategory);
-    console.log('Lọc - Tất cả nguyên liệu:', allIngredients.map(i => ({ name: i.name, category: i.category })));
+    console.log('Filter - Current category:', currentCategory);
+    console.log('Filter - All ingredients:', allIngredients.map(i => ({ name: i.name, category: i.category })));
     
     const filtered = allIngredients.filter(item => 
       item.category === currentCategory
     );
     
-    console.log('Lọc - Nguyên liệu đã lọc:', filtered.map(i => ({ name: i.name, category: i.category })));
+    console.log('Filter - Filtered ingredients:', filtered.map(i => ({ name: i.name, category: i.category })));
     return filtered;
   }, [allIngredients, categoryName]);
 
@@ -73,18 +73,18 @@ const CategoryDetail: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = filteredIngredients.slice(startIndex, startIndex + pageSize);
 
-  // Tính toán thống kê
+  // Calculate statistics
   const totalProducts = categoryIngredients.length;
   const inStockProducts = categoryIngredients.filter(i => i.status === 'active').length;
   const lowStockProducts = categoryIngredients.filter(i => i.status === 'low_stock').length;
   const outOfStockProducts = categoryIngredients.filter(i => i.status === 'expired').length;
   
-  console.log('Thống kê - Danh mục:', decodeURIComponent(categoryName || ''));
-  console.log('Thống kê - Tổng sản phẩm:', totalProducts);
-  console.log('Thống kê - Còn hàng:', inStockProducts);
-  console.log('Thống kê - Sắp hết hàng:', lowStockProducts);
-  console.log('Thống kê - Hết hàng:', outOfStockProducts);
-  console.log('Thống kê - Nên hiển thị thẻ hết hàng:', outOfStockProducts > 0);
+  console.log('Stats - Category:', decodeURIComponent(categoryName || ''));
+  console.log('Stats - Total products:', totalProducts);
+  console.log('Stats - In stock:', inStockProducts);
+  console.log('Stats - Low stock:', lowStockProducts);
+  console.log('Stats - Out of stock:', outOfStockProducts);
+  console.log('Stats - Should show out of stock card:', outOfStockProducts > 0);
 
   const handleViewImage = (imageUrl: string) => {
     setSelectedImage(imageUrl);
@@ -94,7 +94,7 @@ const CategoryDetail: React.FC = () => {
   const handleAddIngredient = (ingredientData: Omit<Ingredient, "id">) => {
     try {
       if (editingIngredient) {
-        // Chỉnh sửa nguyên liệu hiện có
+        // Edit existing ingredient
         const formatDate = (dateString: string) => {
           if (!dateString || dateString === '') {
             return editingIngredient.importDate;
@@ -111,24 +111,24 @@ const CategoryDetail: React.FC = () => {
 
         const formattedDate = formatDate(ingredientData.importDate || '');
         
-        console.log('Chỉnh sửa - Nguyên liệu gốc:', editingIngredient);
-        console.log('Chỉnh sửa - Dữ liệu mới:', ingredientData);
-        console.log('Chỉnh sửa - Ngày đã định dạng:', formattedDate);
+        console.log('Edit - Original ingredient:', editingIngredient);
+        console.log('Edit - New data:', ingredientData);
+        console.log('Edit - Formatted date:', formattedDate);
         
-        // Cập nhật trong localStorage
+        // Update in localStorage
         const savedIngredients = loadIngredients();
         const updatedIngredients = savedIngredients.map((item: Ingredient) =>
           item.id === editingIngredient.id
             ? { 
                 ...ingredientData, 
                 id: editingIngredient.id,
-                category: editingIngredient.category, // Giữ nguyên danh mục cũ
+                category: editingIngredient.category, // Giữ nguyên category cũ
                 importDate: formattedDate
               }
             : item
         );
         
-        console.log('Chỉnh sửa - Nguyên liệu đã cập nhật:', updatedIngredients);
+        console.log('Edit - Updated ingredients:', updatedIngredients);
         localStorage.setItem('ingredients', JSON.stringify(updatedIngredients));
         setAllIngredients(updatedIngredients);
         
@@ -140,7 +140,7 @@ const CategoryDetail: React.FC = () => {
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Thêm nguyên liệu mới
+        // Add new ingredient
         const formatDate = (dateString: string) => {
           if (!dateString || dateString === '') {
             const today = new Date();
@@ -165,7 +165,7 @@ const CategoryDetail: React.FC = () => {
           importDate: formattedDate,
         };
         
-        // Cập nhật trong localStorage
+        // Update in localStorage
         const savedIngredients = loadIngredients();
         const updatedIngredients = [...savedIngredients, newIngredient];
         localStorage.setItem('ingredients', JSON.stringify(updatedIngredients));
@@ -206,7 +206,7 @@ const CategoryDetail: React.FC = () => {
     try {
       setDeleteLoading(true);
       
-      // Cập nhật trong localStorage
+      // Update in localStorage
       const savedIngredients = loadIngredients();
       const updatedIngredients = savedIngredients.filter(
         (item: Ingredient) => item.id !== ingredientToDelete.id

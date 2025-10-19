@@ -14,14 +14,14 @@ import { exportToExcel, exportToPDF } from '../utils/exportUtils.ts';
 const { Search } = Input;
 
 const ProductList: React.FC = () => {
-  // Tải từ localStorage hoặc sử dụng fakeProducts
+  // Load từ localStorage hoặc dùng fakeProducts
   const loadProducts = () => {
     const saved = localStorage.getItem('products');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Lỗi khi tải sản phẩm:', e);
+        console.error('Error loading products:', e);
         return fakeProducts; // Sử dụng fakeProducts làm dữ liệu mẫu
       }
     }
@@ -46,16 +46,16 @@ const ProductList: React.FC = () => {
     onClose: () => setNotification(prev => ({ ...prev, visible: false }))
   });
 
-  // Lưu vào localStorage mỗi khi sản phẩm thay đổi
+  // Lưu vào localStorage mỗi khi products thay đổi
   useEffect(() => {
     localStorage.setItem('products', JSON.stringify(products));
-    console.log('Đã lưu vào localStorage:', products.length, 'sản phẩm');
+    console.log('Saved to localStorage:', products.length, 'products');
   }, [products]);
 
-  // Lọc sản phẩm dựa trên tìm kiếm
+  // Filter products based on search
   const filteredProducts = useMemo(() => {
-    console.log('Tổng sản phẩm:', products.length);
-    console.log('Sản phẩm:', products.map(p => p.name));
+    console.log('Total products:', products.length);
+    console.log('Products:', products.map(p => p.name));
     return products.filter((item) =>
       item.name.toLowerCase().includes(searchText.toLowerCase())
     );
@@ -67,27 +67,27 @@ const ProductList: React.FC = () => {
   const handleAddProduct = (productData: Omit<Ingredient, "id">) => {
     try {
       if (editingProduct) {
-        // Chỉnh sửa sản phẩm hiện có - cho phép cập nhật ngày nhập
+        // Edit existing product - cho phép cập nhật ngày nhập
         const formatDate = (dateString: string) => {
-          console.log('Chỉnh sửa - Chuỗi ngày đầu vào:', dateString);
+          console.log('Edit - Input dateString:', dateString);
           
           if (!dateString || dateString === '') {
             // Giữ nguyên ngày cũ nếu không nhập ngày mới
-            console.log('Chỉnh sửa - Giữ nguyên ngày cũ:', editingProduct.importDate);
+            console.log('Edit - Keeping old date:', editingProduct.importDate);
             return editingProduct.importDate;
           }
           
           // Xử lý format YYYY-MM-DD từ input date
           const date = new Date(dateString + 'T00:00:00');
-          console.log('Chỉnh sửa - Ngày đã phân tích:', date);
+          console.log('Edit - Parsed date:', date);
           
           if (isNaN(date.getTime())) {
-            console.log('Chỉnh sửa - Ngày không hợp lệ, giữ nguyên ngày cũ');
+            console.log('Edit - Invalid date, keeping old date');
             return editingProduct.importDate;
           }
           
           const formatted = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-          console.log('Chỉnh sửa - Kết quả đã định dạng:', formatted);
+          console.log('Edit - Formatted result:', formatted);
           return formatted;
         };
 
@@ -99,7 +99,7 @@ const ProductList: React.FC = () => {
               ? { 
                   ...productData, 
                   id: editingProduct.id,
-                  importDate: formattedDate // Sử dụng ngày đã định dạng
+                  importDate: formattedDate // Sử dụng ngày đã format
                 }
               : item
           )
@@ -112,44 +112,44 @@ const ProductList: React.FC = () => {
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Thêm sản phẩm mới - tự động tạo ngày nhập nếu không có
+        // Add new product - tự động tạo ngày nhập nếu không có
         const formatDate = (dateString: string) => {
-          console.log('Chuỗi ngày đầu vào:', dateString);
+          console.log('Input dateString:', dateString);
           
           if (!dateString || dateString === '') {
             const today = new Date();
             const formatted = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-            console.log('Sử dụng ngày hôm nay:', formatted);
+            console.log('Using today date:', formatted);
             return formatted;
           }
           
           // Xử lý format YYYY-MM-DD từ input date
           const date = new Date(dateString + 'T00:00:00'); // Thêm timezone để tránh lỗi
-          console.log('Ngày đã phân tích:', date);
+          console.log('Parsed date:', date);
           
           if (isNaN(date.getTime())) {
-            console.log('Ngày không hợp lệ, sử dụng ngày hôm nay');
+            console.log('Invalid date, using today');
             const today = new Date();
             return `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
           }
           
           const formatted = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-          console.log('Kết quả đã định dạng:', formatted);
+          console.log('Formatted result:', formatted);
           return formatted;
         };
         
         const formattedDate = formatDate(productData.importDate || '');
-        console.log('Ngày cuối cùng đã định dạng:', formattedDate);
+        console.log('Final formatted date:', formattedDate);
         
         const newProduct: Ingredient = {
           ...productData,
           id: Date.now().toString(),
-          importDate: formattedDate, // Định dạng ngày nhập
+          importDate: formattedDate, // Format ngày nhập
         };
-        console.log('Sản phẩm mới trước khi thêm:', newProduct);
+        console.log('New product before adding:', newProduct);
         setProducts(prev => {
           const updated = [...prev, newProduct];
-          console.log('Danh sách sản phẩm đã cập nhật:', updated);
+          console.log('Updated products list:', updated);
           return updated;
         });
         setNotification({
@@ -188,7 +188,7 @@ const ProductList: React.FC = () => {
     
     setDeleteLoading(true);
     try {
-      // Mô phỏng cuộc gọi API
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setProducts((prev) => prev.filter((item) => item.id !== productToDelete.id));

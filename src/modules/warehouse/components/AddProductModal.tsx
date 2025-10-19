@@ -37,7 +37,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       onOk(formattedValues);
       form.resetFields();
     } catch (error) {
-      console.error("Xác thực thất bại:", error);
+      console.error("Validation failed:", error);
     } finally {
       setLoading(false);
     }
@@ -49,17 +49,17 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     onCancel();
   };
 
-  // Đặt giá trị form khi chỉnh sửa
+  // Set form values when editing
   React.useEffect(() => {
     if (editingProduct && visible) {
       if (editingProduct.category) {
         setSelectedCategory(editingProduct.category);
       }
 
-      // Chuyển đổi DD/MM/YYYY thành YYYY-MM-DD cho input ngày
+      // Convert DD/MM/YYYY to YYYY-MM-DD for date input
       if (editingProduct.importDate) {
         const convertDateFormat = (dateStr: string) => {
-          // Kiểm tra xem ngày có ở định dạng DD/MM/YYYY không
+          // Check if date is in DD/MM/YYYY format
           if (dateStr.includes('/')) {
             const parts = dateStr.split('/');
             if (parts.length === 3) {
@@ -67,15 +67,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               return `${year}-${month?.padStart(2, '0')}-${day?.padStart(2, '0')}`;
             }
           }
-          return dateStr; // Trả về như cũ nếu đã ở định dạng đúng
+          return dateStr; // Return as is if already in correct format
         };
 
         const convertedDate = convertDateFormat(editingProduct.importDate);
-        console.log('Chuyển đổi ngày:', editingProduct.importDate, '->', convertedDate);
+        console.log('Converting date:', editingProduct.importDate, '->', convertedDate);
         form.setFieldsValue({ importDate: convertedDate });
       }
 
-      // Chuyển đổi giá từ "20.000đ" thành "20000" cho InputNumber
+      // Convert price from "20.000đ" to "20000" for InputNumber
       if (editingProduct.price) {
         const convertPrice = (priceStr: string) => {
           const cleanPrice = priceStr.replace(/[^\d.,]/g, '');
@@ -121,7 +121,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         className="px-4"
       >
         <Row gutter={24}>
-          {/* Cột bên trái */}
+          {/* Cột trái */}
           <Col span={12}>
             <Form.Item
               name="name"
@@ -216,7 +216,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
             </Form.Item>
           </Col>
 
-          {/* Cột bên phải */}
+          {/* Cột phải */}
           <Col span={12}>
             <Form.Item
               name="image"

@@ -66,7 +66,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex flex-col w-[1286px] h-[580px] gap-6 justify-between">
+    <div className="flex flex-col w-[1286px] h-[580px] gap-6 justify-between mx-auto">
       <div className="mx-auto py-8">
         <div className="flex font-bold text-4xl mb-4">
           <h1 className="text-primary-500">ShineWay</h1> -

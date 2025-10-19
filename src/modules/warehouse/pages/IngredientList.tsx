@@ -8,21 +8,20 @@ import { fakeIngredients } from "../data/ingredients.ts";
 import AddIngredientModal from "../components/AddIngredientModal.tsx";
 import ExportDropdown from "../components/ExportDropdown.tsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.tsx";
-
+import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
 import { exportToExcel, exportToPDF } from '../utils/exportUtils.ts';
-import type { NotificationProps } from "../../../components/Notification.tsx";
 
 const { Search } = Input;
 
 const IngredientList: React.FC = () => {
-  // Tải từ localStorage hoặc sử dụng fakeIngredients
+  // Load từ localStorage hoặc dùng fakeIngredients
   const loadIngredients = () => {
     const saved = localStorage.getItem('ingredients');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Lỗi khi tải nguyên liệu:', e);
+        console.error('Error loading ingredients:', e);
         return fakeIngredients;
       }
     }
@@ -47,16 +46,16 @@ const IngredientList: React.FC = () => {
     onClose: () => setNotification(prev => ({ ...prev, visible: false }))
   });
 
-  // Lưu vào localStorage mỗi khi nguyên liệu thay đổi
+  // Lưu vào localStorage mỗi khi ingredients thay đổi
   useEffect(() => {
     localStorage.setItem('ingredients', JSON.stringify(ingredients));
-    console.log('Đã lưu vào localStorage:', ingredients.length, 'nguyên liệu');
+    console.log('Saved to localStorage:', ingredients.length, 'ingredients');
   }, [ingredients]);
 
-  // Lọc nguyên liệu dựa trên tìm kiếm
+  // Filter ingredients based on search
   const filteredIngredients = useMemo(() => {
-    console.log('Tổng nguyên liệu:', ingredients.length);
-    console.log('Nguyên liệu:', ingredients.map(i => i.name));
+    console.log('Total ingredients:', ingredients.length);
+    console.log('Ingredients:', ingredients.map(i => i.name));
     return ingredients.filter((item) =>
       item.name.toLowerCase().includes(searchText.toLowerCase())
     );
@@ -68,27 +67,27 @@ const IngredientList: React.FC = () => {
   const handleAddIngredient = (ingredientData: Omit<Ingredient, "id">) => {
     try {
       if (editingIngredient) {
-        // Chỉnh sửa nguyên liệu hiện có - cho phép cập nhật ngày nhập
+        // Edit existing ingredient - cho phép cập nhật ngày nhập
         const formatDate = (dateString: string) => {
-          console.log('Chỉnh sửa - Chuỗi ngày đầu vào:', dateString);
+          console.log('Edit - Input dateString:', dateString);
           
           if (!dateString || dateString === '') {
             // Giữ nguyên ngày cũ nếu không nhập ngày mới
-            console.log('Chỉnh sửa - Giữ nguyên ngày cũ:', editingIngredient.importDate);
+            console.log('Edit - Keeping old date:', editingIngredient.importDate);
             return editingIngredient.importDate;
           }
           
           // Xử lý format YYYY-MM-DD từ input date
           const date = new Date(dateString + 'T00:00:00');
-          console.log('Chỉnh sửa - Ngày đã phân tích:', date);
+          console.log('Edit - Parsed date:', date);
           
           if (isNaN(date.getTime())) {
-            console.log('Chỉnh sửa - Ngày không hợp lệ, giữ nguyên ngày cũ');
+            console.log('Edit - Invalid date, keeping old date');
             return editingIngredient.importDate;
           }
           
           const formatted = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-          console.log('Chỉnh sửa - Kết quả đã định dạng:', formatted);
+          console.log('Edit - Formatted result:', formatted);
           return formatted;
         };
 
@@ -100,7 +99,7 @@ const IngredientList: React.FC = () => {
               ? { 
                   ...ingredientData, 
                   id: editingIngredient.id,
-                  importDate: formattedDate // Sử dụng ngày đã định dạng
+                  importDate: formattedDate // Sử dụng ngày đã format
                 }
               : item
           )
@@ -113,45 +112,45 @@ const IngredientList: React.FC = () => {
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Thêm nguyên liệu mới - tự động tạo ngày nhập nếu không có
+        // Add new ingredient - tự động tạo ngày nhập nếu không có
         const formatDate = (dateString: string) => {
-          console.log('Chuỗi ngày đầu vào:', dateString);
+          console.log('Input dateString:', dateString);
           
           if (!dateString || dateString === '') {
             const today = new Date();
             const formatted = `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
-            console.log('Sử dụng ngày hôm nay:', formatted);
+            console.log('Using today date:', formatted);
             return formatted;
           }
           
           // Xử lý format YYYY-MM-DD từ input date
           const date = new Date(dateString + 'T00:00:00'); // Thêm timezone để tránh lỗi
-          console.log('Ngày đã phân tích:', date);
+          console.log('Parsed date:', date);
           
           if (isNaN(date.getTime())) {
-            console.log('Ngày không hợp lệ, sử dụng ngày hôm nay');
+            console.log('Invalid date, using today');
             const today = new Date();
             return `${today.getDate().toString().padStart(2, '0')}/${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getFullYear()}`;
           }
           
           const formatted = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
-          console.log('Kết quả đã định dạng:', formatted);
+          console.log('Formatted result:', formatted);
           return formatted;
         };
         
         const formattedDate = formatDate(ingredientData.importDate || '');
-        console.log('Ngày cuối cùng đã định dạng:', formattedDate);
+        console.log('Final formatted date:', formattedDate);
         
         const newIngredient: Ingredient = {
           ...ingredientData,
           id: Date.now().toString(),
-          importDate: formattedDate, // Định dạng ngày nhập
+          importDate: formattedDate, // Format ngày nhập
         };
-        console.log('Nguyên liệu mới trước khi thêm:', newIngredient);
+        console.log('New ingredient before adding:', newIngredient);
         setIngredients(prev => {
           const updated = [...prev, newIngredient];
-          console.log('Danh sách nguyên liệu đã cập nhật:', updated);
-          console.log('Nguyên liệu mới đã thêm:', newIngredient);
+          console.log('Updated ingredients list:', updated);
+          console.log('New ingredient added:', newIngredient);
           return updated;
         });
         setNotification({
@@ -190,7 +189,7 @@ const IngredientList: React.FC = () => {
     
     setDeleteLoading(true);
     try {
-      // Mô phỏng cuộc gọi API
+      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setIngredients((prev) => prev.filter((item) => item.id !== ingredientToDelete.id));
@@ -364,11 +363,11 @@ const IngredientList: React.FC = () => {
       align: "center",
       width: 120,
       render: (importDate: string) => {
-        // Định dạng ngày thành DD/MM/YYYY với zero-padding
+        // Format date to DD/MM/YYYY with zero-padding
         const formatDate = (dateStr: string) => {
           if (!dateStr || dateStr === "N/A") return dateStr;
           
-          // Nếu đã ở định dạng DD/MM/YYYY, đảm bảo zero-padding
+          // If already in DD/MM/YYYY format, ensure zero-padding
           if (dateStr.includes('/') && dateStr.split('/').length === 3) {
             const parts = dateStr.split('/');
             const [day, month, year] = parts;
@@ -377,7 +376,7 @@ const IngredientList: React.FC = () => {
             return `${paddedDay}/${paddedMonth}/${year}`;
           }
           
-          // Nếu ở định dạng YYYY-MM-DD, chuyển đổi thành DD/MM/YYYY với zero-padding
+          // If in YYYY-MM-DD format, convert to DD/MM/YYYY with zero-padding
           if (dateStr.includes('-') && dateStr.split('-').length === 3) {
             const parts = dateStr.split('-');
             const [year, month, day] = parts;
@@ -392,19 +391,19 @@ const IngredientList: React.FC = () => {
         return formatDate(importDate) || "N/A";
       },
       sorter: (a: Ingredient, b: Ingredient) => {
-        // Chuyển đổi DD/MM/YYYY thành Date để so sánh
-        const parseDate = (dateStr: string | undefined) => {
-          if (!dateStr || dateStr === "N/A") return new Date(0); // Ngày không hợp lệ sẽ đặt ở đầu
+        // Convert DD/MM/YYYY to Date for comparison
+        const parseDate = (dateStr: string) => {
+          if (!dateStr || dateStr === "N/A") return new Date(0); // Invalid dates go to beginning
           const parts = dateStr.split('/');
           if (parts.length === 3) {
             const [day, month, year] = parts;
-            return new Date(parseInt(year || '0'), parseInt(month || '0') - 1, parseInt(day || '0'));
+            return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
           }
           return new Date(0);
         };
         
-        const dateA = parseDate(a.importDate);
-        const dateB = parseDate(b.importDate);
+        const dateA = parseDate(a.importDate || '');
+        const dateB = parseDate(b.importDate || '');
         return dateA.getTime() - dateB.getTime();
       },
       sortDirections: ['ascend', 'descend'],
@@ -435,12 +434,12 @@ const IngredientList: React.FC = () => {
         <span className="text-[#14933E] font-bold text-xs">{price}</span>
       ),
       sorter: (a: Ingredient, b: Ingredient) => {
-        // Trích xuất giá trị số từ chuỗi giá (loại bỏ "đ" và phân tích)
+        // Extract numeric value from price string (remove "đ" and parse)
         const parsePrice = (priceStr: string) => {
           if (!priceStr) return 0;
-          // Loại bỏ "đ" và các ký tự không phải số ngoại trừ dấu chấm và phẩy
+          // Remove "đ" and any non-numeric characters except dots and commas
           const cleanPrice = priceStr.replace(/[^\d.,]/g, '');
-          // Thay thế phẩy bằng chấm để phân tích số thập phân
+          // Replace comma with dot for decimal parsing
           const normalizedPrice = cleanPrice.replace(',', '.');
           return parseFloat(normalizedPrice) || 0;
         };
@@ -602,13 +601,13 @@ const IngredientList: React.FC = () => {
       />
 
       {/* Notification */}
-      {/* <Notification
+      <Notification
         type={notification.type}
         message={notification.message}
         visible={notification.visible}
         onClose={notification.onClose}
         duration={4000}
-      /> */}
+      />
     </div>
   );
 };

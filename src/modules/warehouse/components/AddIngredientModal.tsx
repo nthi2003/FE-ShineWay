@@ -31,7 +31,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setLoading(true);
       const values = await form.validateFields();
       
-      // Định dạng giá để bao gồm hậu tố "đ"
+      // Format price to include "đ" suffix
       const formattedValues = {
         ...values,
         price: values.price ? `${values.price}đ` : values.price
@@ -40,7 +40,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       onOk(formattedValues);
       form.resetFields();
     } catch (error) {
-      console.error("Xác thực thất bại:", error);
+      console.error("Validation failed:", error);
     } finally {
       setLoading(false);
     }
@@ -58,17 +58,17 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     form.setFieldsValue({ category: categoryName });
   };
 
-  // Khởi tạo selectedCategory và importDate khi chỉnh sửa
+  // Initialize selectedCategory and importDate when editing
   React.useEffect(() => {
     if (editingIngredient) {
       if (editingIngredient.category) {
         setSelectedCategory(editingIngredient.category);
       }
       
-      // Chuyển đổi DD/MM/YYYY thành YYYY-MM-DD cho input ngày
+      // Convert DD/MM/YYYY to YYYY-MM-DD for date input
       if (editingIngredient.importDate) {
         const convertDateFormat = (dateStr: string) => {
-          // Kiểm tra xem ngày có ở định dạng DD/MM/YYYY không
+          // Check if date is in DD/MM/YYYY format
           if (dateStr.includes('/')) {
             const parts = dateStr.split('/');
             if (parts.length === 3) {
@@ -76,26 +76,26 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               return `${year}-${month?.padStart(2, '0')}-${day?.padStart(2, '0')}`;
             }
           }
-          return dateStr; // Trả về như cũ nếu đã ở định dạng đúng
+          return dateStr; // Return as is if already in correct format
         };
         
         const convertedDate = convertDateFormat(editingIngredient.importDate);
-        console.log('Chuyển đổi ngày:', editingIngredient.importDate, '->', convertedDate);
+        console.log('Converting date:', editingIngredient.importDate, '->', convertedDate);
         form.setFieldsValue({ importDate: convertedDate });
       }
       
-      // Chuyển đổi giá từ "20.000đ" thành "20000" cho InputNumber
+      // Convert price from "20.000đ" to "20000" for InputNumber
       if (editingIngredient.price) {
         const convertPrice = (priceStr: string) => {
-          // Loại bỏ "đ" và các ký tự không phải số ngoại trừ dấu chấm và phẩy
+          // Remove "đ" and any non-numeric characters except dots and commas
           const cleanPrice = priceStr.replace(/[^\d.,]/g, '');
-          // Thay thế phẩy bằng chấm để phân tích số thập phân
+          // Replace comma with dot for decimal parsing
           const normalizedPrice = cleanPrice.replace(',', '.');
           return parseFloat(normalizedPrice) || 0;
         };
         
         const numericPrice = convertPrice(editingIngredient.price);
-        console.log('Chuyển đổi giá:', editingIngredient.price, '->', numericPrice);
+        console.log('Converting price:', editingIngredient.price, '->', numericPrice);
         form.setFieldsValue({ price: numericPrice });
       }
     }
@@ -137,7 +137,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     showUploadList: false,
     beforeUpload: (file) => {
       handleFileChange(file);
-      return false; // Ngăn chặn tự động upload
+      return false; // Prevent auto upload
     },
   };
 
@@ -162,7 +162,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         className="px-4"
       >
         <Row gutter={24}>
-          {/* Cột bên trái */}
+          {/* Cột trái */}
           <Col span={12}>
             <Form.Item
               name="name"
@@ -289,7 +289,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             </Form.Item>
           </Col>
 
-          {/* Cột bên phải */}
+          {/* Cột phải */}
           <Col span={12}>
             <Form.Item
               name="price"

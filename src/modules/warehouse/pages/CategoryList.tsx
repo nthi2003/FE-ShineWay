@@ -14,14 +14,14 @@ const { Search } = Input;
 const CategoryList: React.FC = () => {
   const navigate = useNavigate();
   
-  // Tải từ localStorage hoặc sử dụng fakeCategories
+  // Load từ localStorage hoặc dùng fakeCategories
   const loadCategories = () => {
     const saved = localStorage.getItem('categories');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Lỗi khi tải danh mục:', e);
+        console.error('Error loading categories:', e);
         return fakeCategories;
       }
     }
@@ -41,13 +41,13 @@ const CategoryList: React.FC = () => {
     onClose: () => setNotification(prev => ({ ...prev, visible: false }))
   });
 
-  // Debug trạng thái modal
+  // Debug modal state
   React.useEffect(() => {
     console.log('Modal visible:', isModalVisible);
     console.log('Editing category:', editingCategory);
   }, [isModalVisible, editingCategory]);
 
-  // Tải nguyên liệu và sản phẩm để tính số lượng sản phẩm
+  // Load ingredients and products to calculate product count
   const loadIngredients = () => {
     const savedIngredients = localStorage.getItem('ingredients');
     const savedProducts = localStorage.getItem('products');
@@ -75,28 +75,28 @@ const CategoryList: React.FC = () => {
       products = fakeProducts;
     }
     
-    // Kết hợp nguyên liệu và sản phẩm để đếm
+    // Combine ingredients and products for counting
     return [...ingredients, ...products];
   };
 
   const allIngredients = loadIngredients();
 
-  // Hàm lấy số lượng sản phẩm cho một danh mục
+  // Function to get product count for a category
   const getProductCount = (categoryName: string) => {
     const count = allIngredients.filter((ingredient: Ingredient) => ingredient.category === categoryName).length;
-    console.log(`Số lượng sản phẩm cho "${categoryName}":`, count, 'từ', allIngredients.length, 'tổng số mục');
-    console.log('Tất cả danh mục nguyên liệu:', allIngredients.map(i => i.category));
+    console.log(`Product count for "${categoryName}":`, count, 'from', allIngredients.length, 'total items');
+    console.log('All ingredients categories:', allIngredients.map(i => i.category));
     return count;
   };
 
 
-  // Lưu vào localStorage mỗi khi danh mục thay đổi
+  // Lưu vào localStorage mỗi khi categories thay đổi
   useEffect(() => {
     localStorage.setItem('categories', JSON.stringify(categories));
-    console.log('Đã lưu vào localStorage:', categories.length, 'danh mục');
+    console.log('Saved to localStorage:', categories.length, 'categories');
   }, [categories]);
 
-  // Lọc danh mục dựa trên tìm kiếm
+  // Filter categories based on search
   const filteredCategories = useMemo(() => {
     return categories.filter((item) =>
       item.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -107,13 +107,13 @@ const CategoryList: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = filteredCategories.slice(startIndex, startIndex + pageSize);
 
-  // Tính tổng
+  // Calculate totals
   const totalProducts = categories.reduce((sum, cat) => sum + getProductCount(cat.name), 0);
 
   const handleAddCategory = (categoryData: Omit<Category, "id">) => {
     try {
       if (editingCategory) {
-        // Chỉnh sửa danh mục hiện có
+        // Edit existing category
         setCategories((prev) =>
           prev.map((item) =>
             item.id === editingCategory.id
@@ -129,7 +129,7 @@ const CategoryList: React.FC = () => {
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Thêm danh mục mới
+        // Add new category
         const newCategory: Category = {
           ...categoryData,
           id: Date.now().toString(),
@@ -171,10 +171,10 @@ const CategoryList: React.FC = () => {
   };
 
   const handleEdit = (record: Category) => {
-    console.log('Nhấp chỉnh sửa cho danh mục:', record);
+    console.log('Edit clicked for category:', record);
     setEditingCategory(record);
     setIsModalVisible(true);
-    console.log('Modal bây giờ sẽ hiển thị');
+    console.log('Modal should be visible now');
   };
 
   const handleCancel = () => {
@@ -222,11 +222,11 @@ const CategoryList: React.FC = () => {
       align: "center",
       width: 120,
       render: (date: string) => {
-        // Định dạng ngày thành DD/MM/YYYY với zero-padding
+        // Format date to DD/MM/YYYY with zero-padding
         const formatDate = (dateStr: string) => {
           if (!dateStr || dateStr === "N/A") return dateStr;
           
-          // Nếu đã ở định dạng DD/MM/YYYY, đảm bảo zero-padding
+          // If already in DD/MM/YYYY format, ensure zero-padding
           if (dateStr.includes('/') && dateStr.split('/').length === 3) {
             const parts = dateStr.split('/');
             const [day, month, year] = parts;
@@ -235,7 +235,7 @@ const CategoryList: React.FC = () => {
             return `${paddedDay}/${paddedMonth}/${year}`;
           }
           
-          // Nếu ở định dạng YYYY-MM-DD, chuyển đổi thành DD/MM/YYYY với zero-padding
+          // If in YYYY-MM-DD format, convert to DD/MM/YYYY with zero-padding
           if (dateStr.includes('-') && dateStr.split('-').length === 3) {
             const parts = dateStr.split('-');
             const [year, month, day] = parts;
@@ -250,9 +250,9 @@ const CategoryList: React.FC = () => {
         return <span className="text-[#222222]">{formatDate(date)}</span>;
       },
       sorter: (a: Category, b: Category) => {
-        // Chuyển đổi DD/MM/YYYY thành Date để so sánh
+        // Convert DD/MM/YYYY to Date for comparison
         const parseDate = (dateStr: string) => {
-          if (!dateStr || dateStr === "N/A") return new Date(0); // Ngày không hợp lệ sẽ đặt ở đầu
+          if (!dateStr || dateStr === "N/A") return new Date(0); // Invalid dates go to beginning
           const parts = dateStr.split('/');
           if (parts.length === 3) {
             const [day, month, year] = parts;

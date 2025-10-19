@@ -90,13 +90,32 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
     }
   }, [editingIngredient, categoryName, form]);
 
+  // Reset form when modal opens/closes
+  React.useEffect(() => {
+    if (!visible) {
+      form.resetFields();
+      setImagePreview(null);
+      setSelectedStatus('');
+    }
+  }, [visible, form]);
+
   const handleFileChange = (file: File) => {
+    // Kiểm tra kích thước file (tối đa 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      message.error('Kích thước file không được vượt quá 5MB!');
+      return;
+    }
+
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setImagePreview(result);
         form.setFieldsValue({ image: result });
+      };
+      reader.onerror = () => {
+        message.error('Lỗi khi đọc file!');
       };
       reader.readAsDataURL(file);
     } else {
@@ -156,7 +175,11 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             <Form.Item
               name="name"
               label={<span className="font-bold text-black">Tên :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập tên nguyên liệu" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập tên nguyên liệu" },
+                { min: 2, message: "Tên nguyên liệu phải có ít nhất 2 ký tự" },
+                { max: 100, message: "Tên nguyên liệu không được vượt quá 100 ký tự" }
+              ]}
             >
               <Input 
                 placeholder="Nhập tên nguyên liệu" 
@@ -251,14 +274,21 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             <Form.Item
               name="price"
               label={<span className="font-bold text-black">Đơn giá :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập giá" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập giá" },
+                { type: 'number', min: 0, message: "Giá phải lớn hơn hoặc bằng 0" }
+              ]}
             >
               <InputNumber
                 min={0}
                 placeholder="Nhập giá"
                 className="w-full rounded-md border-gray-300"
                 formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+                parser={(value) => {
+                  const parsed = value?.replace(/\$\s?|(,*)/g, '') || '0';
+                  const numValue = parseFloat(parsed) || 0;
+                  return numValue as any;
+                }}
                 addonAfter="đ"
                 style={{ width: '100%' }}
               />
@@ -267,7 +297,10 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             <Form.Item
               name="quantity"
               label={<span className="font-bold text-black">Số lượng :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập số lượng" },
+                { type: 'number', min: 0, message: "Số lượng phải lớn hơn hoặc bằng 0" }
+              ]}
             >
               <InputNumber
                 min={0}
