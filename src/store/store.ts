@@ -20,7 +20,7 @@ const persistConfig = {
 
 const rootReducer = combineReducers({
   auth: authReducer,
-  // Thêm các slice khác nếu cần
+  // Thêm các slice khác nếu cần thiết
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

@@ -64,7 +64,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
       address: "",
       phone: "",
     };
-    console.log("Data Employee:", newEmployee);
+    console.log("Dữ liệu nhân viên:", newEmployee);
     onAdd(newEmployee);
     setIsSuccessModalVisible(true);
     form.resetFields();
@@ -88,9 +88,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
         layout="vertical"
       >
         <Row gutter={24}>
-          {/* Cột trái */}
+          {/* Cột bên trái */}
           <Col xs={24} sm={12}>
-            {/* --- Họ tên --- */}
+            {/* Thông tin họ tên */}
             <Form.Item
               name="fullname"
               label="Họ Tên"
@@ -99,7 +99,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               <Input placeholder="Nhập họ tên" />
             </Form.Item>
 
-            {/* --- Email --- */}
+            {/* Thông tin email */}
             <Form.Item
               name="email"
               label="Email"
@@ -111,7 +111,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               <Input placeholder="Nhập email" />
             </Form.Item>
 
-            {/* --- Mật khẩu --- */}
+            {/* Thông tin mật khẩu */}
             <Form.Item
               name="password"
               label="Mật khẩu"
@@ -121,9 +121,9 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
             </Form.Item>
           </Col>
 
-          {/* Cột phải */}
+          {/* Cột bên phải */}
           <Col xs={24} sm={12}>
-            {/* --- Chức vụ --- */}
+            {/* Thông tin chức vụ */}
             <Form.Item
               name="department"
               label="Chức vụ"
@@ -135,7 +135,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 <Option value="manager">Manager</Option>
               </Select>
             </Form.Item>
-            {/* --- Ngày tạo --- */}
+            {/* Thông tin ngày tạo */}
             <Form.Item
               name="createdAt"
               label="Ngày tạo"
@@ -148,7 +148,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
               />
             </Form.Item>
 
-            {/* --- Mã nhân viên --- */}
+            {/* Thông tin mã nhân viên */}
             <Form.Item
               name="employeeId"
               label="Mã nhân viên"
@@ -159,7 +159,7 @@ const AddEmployeeModal: React.FC<AddEmployeeModalProps> = ({
                 maxLength={3}
               />
             </Form.Item>
-            {/* --- Lương --- */}
+            {/* Thông tin lương */}
             <Form.Item
               name="salary"
               label="Lương ($)"

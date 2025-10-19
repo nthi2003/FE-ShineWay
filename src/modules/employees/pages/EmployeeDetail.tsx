@@ -53,17 +53,17 @@ const EmployeeDetail: React.FC = () => {
             const index = fakeEmployees.findIndex((e: Employee) => e.employeeId === updatedEmployee.employeeId);
             if (index !== -1) fakeEmployees[index] = updatedEmployee;
 
-            console.log('Đã lưu:', updatedEmployee);
+            console.log('Đã lưu nhân viên:', updatedEmployee);
          })
          .catch((info) => {
-            console.log('Validate Failed:', info);
+            console.log('Xác thực thất bại:', info);
          });
    };
 
    const handleDelete = () => setIsDeleteModalVisible(true);
 
    const confirmDelete = () => {
-      console.log('Đã xóa:', employeeData.fullname);
+      console.log('Đã xóa nhân viên:', employeeData.fullname);
       setIsDeleteModalVisible(false);
    };
 
@@ -72,7 +72,7 @@ const EmployeeDetail: React.FC = () => {
    const handleStatus = (checked: boolean) => {
       const newStatus = checked ? 'active' : 'inactive';
       setEmployeeData((prev) => (prev ? { ...prev, status: newStatus } : prev));
-      console.log('Trạng thái cập nhật:', newStatus);
+      console.log('Trạng thái đã cập nhật:', newStatus);
    };
 
    return (
@@ -91,10 +91,10 @@ const EmployeeDetail: React.FC = () => {
          </div>
 
          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT SIDE */}
+            {/* PHÍA BÊN TRÁI */}
             <Card className="shadow-md rounded-2xl" styles={{ body: { paddingLeft: 0 } }}>
                <div className="flex flex-row gap-4 items-start">
-                  {/* Avatar */}
+                  {/* Ảnh đại diện */}
                   <div className="flex flex-col items-center w-[260px]">
                      <div className="w-full flex items-center justify-center mb-3">
                         <Text className="text-lg font-semibold text-gray-700">Ảnh đại diện</Text>
@@ -137,7 +137,7 @@ const EmployeeDetail: React.FC = () => {
                      </Button>
                   </div>
 
-                  {/* Info Form */}
+                  {/* Form thông tin */}
                   <div className="flex-1 pr-6">
                      <div className="w-full flex items-center mb-3">
                         <Text className="text-lg font-semibold text-gray-700">Thông tin cá nhân</Text>
@@ -232,7 +232,7 @@ const EmployeeDetail: React.FC = () => {
                            <Input placeholder="Nhập địa chỉ" />
                         </Form.Item>
 
-                        {/* Trạng thái */}
+                        {/* Trạng thái hoạt động */}
                         <div>
                            <Text strong className="text-gray-600 text-xs">
                               Trạng thái
@@ -258,7 +258,7 @@ const EmployeeDetail: React.FC = () => {
                </div>
             </Card>
 
-            {/* RIGHT SIDE */}
+            {/* PHÍA BÊN PHẢI */}
             <div className="flex flex-col gap-6">
                {/* Hoạt động gần đây */}
                <Card
@@ -287,7 +287,7 @@ const EmployeeDetail: React.FC = () => {
                   </div>
                </Card>
 
-               {/* Ngày làm + Trạng thái tài khoản */}
+               {/* Ngày làm việc + Trạng thái tài khoản */}
                <div className="grid grid-cols-2 gap-4 mt-4">
                   <Card
                      title={<span className="font-semibold text-gray-700">Ngày làm tháng này</span>}
@@ -343,7 +343,7 @@ const EmployeeDetail: React.FC = () => {
             </div>
          </div>
 
-         {/* Modal lưu */}
+         {/* Modal thông báo lưu thành công */}
          <Modal open={isSaveModalVisible} onCancel={() => setIsSaveModalVisible(false)} footer={null} centered>
             <div className="text-center py-4">
                <div className="flex justify-center mb-3">
@@ -358,7 +358,7 @@ const EmployeeDetail: React.FC = () => {
             </div>
          </Modal>
 
-         {/* Modal Xóa */}
+         {/* Modal xác nhận xóa */}
          <Modal open={isDeleteModalVisible} onCancel={cancelDelete} footer={null} centered>
             <div className="text-center py-4">
                <div className="flex justify-center mb-3">

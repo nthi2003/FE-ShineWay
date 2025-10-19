@@ -4,8 +4,8 @@ import { ArrowLeftOutlined, PlusOutlined, EyeOutlined } from "@ant-design/icons"
 import { Link } from "react-router-dom";
 // import type { ColumnsType } from "antd";
 import type { Ingredient } from "../types/index.ts";
-import { fakeIngredients } from "../data/ingredients.ts";
-import AddIngredientModal from "../components/AddIngredientModal.tsx";
+import { fakeProducts } from "../data/products.ts";
+import AddProductModal from "../components/AddProductModal.tsx";
 import ExportDropdown from "../components/ExportDropdown.tsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.tsx";
 import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
@@ -13,31 +13,31 @@ import { exportToExcel, exportToPDF } from '../utils/exportUtils.ts';
 
 const { Search } = Input;
 
-const IngredientList: React.FC = () => {
-  // Tải từ localStorage hoặc sử dụng fakeIngredients
-  const loadIngredients = () => {
-    const saved = localStorage.getItem('ingredients');
+const ProductList: React.FC = () => {
+  // Tải từ localStorage hoặc sử dụng fakeProducts
+  const loadProducts = () => {
+    const saved = localStorage.getItem('products');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Lỗi khi tải nguyên liệu:', e);
-        return fakeIngredients;
+        console.error('Lỗi khi tải sản phẩm:', e);
+        return fakeProducts; // Sử dụng fakeProducts làm dữ liệu mẫu
       }
     }
-    return fakeIngredients;
+    return fakeProducts;
   };
 
-  const [ingredients, setIngredients] = useState<Ingredient[]>(loadIngredients());
+  const [products, setProducts] = useState<Ingredient[]>(loadProducts());
   const [searchText, setSearchText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(15);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Ingredient | null>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [ingredientToDelete, setIngredientToDelete] = useState<Ingredient | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Ingredient | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [notification, setNotification] = useState<NotificationProps>({
     type: 'success',
@@ -46,35 +46,35 @@ const IngredientList: React.FC = () => {
     onClose: () => setNotification(prev => ({ ...prev, visible: false }))
   });
 
-  // Lưu vào localStorage mỗi khi nguyên liệu thay đổi
+  // Lưu vào localStorage mỗi khi sản phẩm thay đổi
   useEffect(() => {
-    localStorage.setItem('ingredients', JSON.stringify(ingredients));
-    console.log('Đã lưu vào localStorage:', ingredients.length, 'nguyên liệu');
-  }, [ingredients]);
+    localStorage.setItem('products', JSON.stringify(products));
+    console.log('Đã lưu vào localStorage:', products.length, 'sản phẩm');
+  }, [products]);
 
-  // Lọc nguyên liệu dựa trên tìm kiếm
-  const filteredIngredients = useMemo(() => {
-    console.log('Tổng nguyên liệu:', ingredients.length);
-    console.log('Nguyên liệu:', ingredients.map(i => i.name));
-    return ingredients.filter((item) =>
+  // Lọc sản phẩm dựa trên tìm kiếm
+  const filteredProducts = useMemo(() => {
+    console.log('Tổng sản phẩm:', products.length);
+    console.log('Sản phẩm:', products.map(p => p.name));
+    return products.filter((item) =>
       item.name.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [ingredients, searchText]);
+  }, [products, searchText]);
 
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedData = filteredIngredients.slice(startIndex, startIndex + pageSize);
+  const paginatedData = filteredProducts.slice(startIndex, startIndex + pageSize);
 
-  const handleAddIngredient = (ingredientData: Omit<Ingredient, "id">) => {
+  const handleAddProduct = (productData: Omit<Ingredient, "id">) => {
     try {
-      if (editingIngredient) {
-        // Chỉnh sửa nguyên liệu hiện có - cho phép cập nhật ngày nhập
+      if (editingProduct) {
+        // Chỉnh sửa sản phẩm hiện có - cho phép cập nhật ngày nhập
         const formatDate = (dateString: string) => {
           console.log('Chỉnh sửa - Chuỗi ngày đầu vào:', dateString);
           
           if (!dateString || dateString === '') {
             // Giữ nguyên ngày cũ nếu không nhập ngày mới
-            console.log('Chỉnh sửa - Giữ nguyên ngày cũ:', editingIngredient.importDate);
-            return editingIngredient.importDate;
+            console.log('Chỉnh sửa - Giữ nguyên ngày cũ:', editingProduct.importDate);
+            return editingProduct.importDate;
           }
           
           // Xử lý format YYYY-MM-DD từ input date
@@ -83,7 +83,7 @@ const IngredientList: React.FC = () => {
           
           if (isNaN(date.getTime())) {
             console.log('Chỉnh sửa - Ngày không hợp lệ, giữ nguyên ngày cũ');
-            return editingIngredient.importDate;
+            return editingProduct.importDate;
           }
           
           const formatted = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
@@ -91,28 +91,28 @@ const IngredientList: React.FC = () => {
           return formatted;
         };
 
-        const formattedDate = formatDate(ingredientData.importDate || '');
+        const formattedDate = formatDate(productData.importDate || '');
         
-        setIngredients((prev) =>
+        setProducts((prev) =>
           prev.map((item) =>
-            item.id === editingIngredient.id
+            item.id === editingProduct.id
               ? { 
-                  ...ingredientData, 
-                  id: editingIngredient.id,
+                  ...productData, 
+                  id: editingProduct.id,
                   importDate: formattedDate // Sử dụng ngày đã định dạng
                 }
               : item
           )
         );
-        setEditingIngredient(null);
+        setEditingProduct(null);
         setNotification({
           type: 'success',
-          message: `Đã cập nhật nguyên liệu "${ingredientData.name}" thành công!`,
+          message: `Đã cập nhật sản phẩm "${productData.name}" thành công!`,
           visible: true,
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Thêm nguyên liệu mới - tự động tạo ngày nhập nếu không có
+        // Thêm sản phẩm mới - tự động tạo ngày nhập nếu không có
         const formatDate = (dateString: string) => {
           console.log('Chuỗi ngày đầu vào:', dateString);
           
@@ -138,24 +138,23 @@ const IngredientList: React.FC = () => {
           return formatted;
         };
         
-        const formattedDate = formatDate(ingredientData.importDate || '');
+        const formattedDate = formatDate(productData.importDate || '');
         console.log('Ngày cuối cùng đã định dạng:', formattedDate);
         
-        const newIngredient: Ingredient = {
-          ...ingredientData,
+        const newProduct: Ingredient = {
+          ...productData,
           id: Date.now().toString(),
           importDate: formattedDate, // Định dạng ngày nhập
         };
-        console.log('Nguyên liệu mới trước khi thêm:', newIngredient);
-        setIngredients(prev => {
-          const updated = [...prev, newIngredient];
-          console.log('Danh sách nguyên liệu đã cập nhật:', updated);
-          console.log('Nguyên liệu mới đã thêm:', newIngredient);
+        console.log('Sản phẩm mới trước khi thêm:', newProduct);
+        setProducts(prev => {
+          const updated = [...prev, newProduct];
+          console.log('Danh sách sản phẩm đã cập nhật:', updated);
           return updated;
         });
         setNotification({
           type: 'success',
-          message: `Đã thêm nguyên liệu "${ingredientData.name}" thành công!`,
+          message: `Đã thêm sản phẩm "${productData.name}" thành công!`,
           visible: true,
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
@@ -164,40 +163,40 @@ const IngredientList: React.FC = () => {
     } catch (error) {
       setNotification({
         type: 'error',
-        message: 'Có lỗi xảy ra khi thêm/cập nhật nguyên liệu!',
+        message: 'Có lỗi xảy ra khi thêm/cập nhật sản phẩm!',
         visible: true,
         onClose: () => setNotification(prev => ({ ...prev, visible: false }))
       });
     }
   };
 
-  const handleEdit = (ingredient: Ingredient) => {
-    setEditingIngredient(ingredient);
+  const handleEdit = (product: Ingredient) => {
+    setEditingProduct(product);
     setIsModalVisible(true);
   };
 
   const handleDelete = (id: string) => {
-    const ingredient = ingredients.find(item => item.id === id);
-    if (ingredient) {
-      setIngredientToDelete(ingredient);
+    const product = products.find(item => item.id === id);
+    if (product) {
+      setProductToDelete(product);
       setDeleteModalVisible(true);
     }
   };
 
   const handleConfirmDelete = async () => {
-    if (!ingredientToDelete) return;
+    if (!productToDelete) return;
     
     setDeleteLoading(true);
     try {
       // Mô phỏng cuộc gọi API
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setIngredients((prev) => prev.filter((item) => item.id !== ingredientToDelete.id));
-      message.success(`Đã xóa nguyên liệu "${ingredientToDelete.name}" thành công!`);
+      setProducts((prev) => prev.filter((item) => item.id !== productToDelete.id));
+      message.success(`Đã xóa sản phẩm "${productToDelete.name}" thành công!`);
       setDeleteModalVisible(false);
-      setIngredientToDelete(null);
+      setProductToDelete(null);
     } catch (error) {
-      message.error("Có lỗi xảy ra khi xóa nguyên liệu!");
+      message.error("Có lỗi xảy ra khi xóa sản phẩm!");
     } finally {
       setDeleteLoading(false);
     }
@@ -205,7 +204,7 @@ const IngredientList: React.FC = () => {
 
   const handleCancelDelete = () => {
     setDeleteModalVisible(false);
-    setIngredientToDelete(null);
+    setProductToDelete(null);
   };
 
   const handleViewImage = (imageUrl: string) => {
@@ -214,26 +213,26 @@ const IngredientList: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setEditingIngredient(null);
+    setEditingProduct(null);
     setIsModalVisible(false);
   };
 
   const showModal = () => {
-    setEditingIngredient(null);
+    setEditingProduct(null);
     setIsModalVisible(true);
   };
 
   const handleResetData = () => {
     if (window.confirm('Bạn có chắc muốn khôi phục dữ liệu gốc? Tất cả thay đổi sẽ bị mất!')) {
-      localStorage.removeItem('ingredients');
-      setIngredients(fakeIngredients);
+      localStorage.removeItem('products');
+      setProducts(fakeProducts);
       message.success('Đã khôi phục dữ liệu gốc!');
     }
   };
 
 
   const handleExportExcel = () => {
-    const result = exportToExcel(filteredIngredients);
+    const result = exportToExcel(filteredProducts);
     if (result.success) {
       message.success(result.message);
     } else {
@@ -242,7 +241,7 @@ const IngredientList: React.FC = () => {
   };
 
   const handleExportPDF = () => {
-    const result = exportToPDF(filteredIngredients);
+    const result = exportToPDF(filteredProducts);
     if (result.success) {
       message.success(result.message);
     } else {
@@ -261,7 +260,7 @@ const IngredientList: React.FC = () => {
       render: (_: any, __: any, index: number) => startIndex + index + 1,
     },
     {
-      title: "Tên nguyên liệu",
+      title: "Tên sản phẩm",
       dataIndex: "name",
       key: "name",
       align: "left",
@@ -296,33 +295,26 @@ const IngredientList: React.FC = () => {
         // Define colors for different categories
         const getCategoryColor = (cat: string) => {
           switch (cat.toLowerCase()) {
-            case 'rau':
-            case 'vegetable':
-              return {
-                border: 'border-[#22C55E]',
-                text: 'text-[#22C55E]',
-                bg: 'bg-green-50'
-              };
-            case 'hải sản':
-            case 'seafood':
+            case 'nước ngọt':
+            case 'soft drink':
               return {
                 border: 'border-[#3B82F6]',
                 text: 'text-[#3B82F6]',
                 bg: 'bg-blue-50'
               };
-            case 'thịt':
-            case 'meat':
-              return {
-                border: 'border-[#EF4444]',
-                text: 'text-[#EF4444]',
-                bg: 'bg-red-50'
-              };
-            case 'lương thực':
-            case 'provisions':
+            case 'bia':
+            case 'beer':
               return {
                 border: 'border-[#F59E0B]',
                 text: 'text-[#F59E0B]',
                 bg: 'bg-orange-50'
+              };
+            case 'nước ép':
+            case 'juice':
+              return {
+                border: 'border-[#22C55E]',
+                text: 'text-[#22C55E]',
+                bg: 'bg-green-50'
               };
             default:
               return {
@@ -363,11 +355,11 @@ const IngredientList: React.FC = () => {
       align: "center",
       width: 120,
       render: (importDate: string) => {
-        // Định dạng ngày thành DD/MM/YYYY với zero-padding
+        // Format date to DD/MM/YYYY with zero-padding
         const formatDate = (dateStr: string) => {
           if (!dateStr || dateStr === "N/A") return dateStr;
           
-          // Nếu đã ở định dạng DD/MM/YYYY, đảm bảo zero-padding
+          // If already in DD/MM/YYYY format, ensure zero-padding
           if (dateStr.includes('/') && dateStr.split('/').length === 3) {
             const parts = dateStr.split('/');
             const [day, month, year] = parts;
@@ -376,7 +368,7 @@ const IngredientList: React.FC = () => {
             return `${paddedDay}/${paddedMonth}/${year}`;
           }
           
-          // Nếu ở định dạng YYYY-MM-DD, chuyển đổi thành DD/MM/YYYY với zero-padding
+          // If in YYYY-MM-DD format, convert to DD/MM/YYYY with zero-padding
           if (dateStr.includes('-') && dateStr.split('-').length === 3) {
             const parts = dateStr.split('-');
             const [year, month, day] = parts;
@@ -391,19 +383,19 @@ const IngredientList: React.FC = () => {
         return formatDate(importDate) || "N/A";
       },
       sorter: (a: Ingredient, b: Ingredient) => {
-        // Chuyển đổi DD/MM/YYYY thành Date để so sánh
-        const parseDate = (dateStr: string | undefined) => {
-          if (!dateStr || dateStr === "N/A") return new Date(0); // Ngày không hợp lệ sẽ đặt ở đầu
+        // Convert DD/MM/YYYY to Date for comparison
+        const parseDate = (dateStr: string) => {
+          if (!dateStr || dateStr === "N/A") return new Date(0); // Invalid dates go to beginning
           const parts = dateStr.split('/');
           if (parts.length === 3) {
             const [day, month, year] = parts;
-            return new Date(parseInt(year || '0'), parseInt(month || '0') - 1, parseInt(day || '0'));
+            return new Date(parseInt(year || '0'), parseInt(month || '1') - 1, parseInt(day || '1'));
           }
           return new Date(0);
         };
         
-        const dateA = parseDate(a.importDate);
-        const dateB = parseDate(b.importDate);
+        const dateA = parseDate(a.importDate || '');
+        const dateB = parseDate(b.importDate || '');
         return dateA.getTime() - dateB.getTime();
       },
       sortDirections: ['ascend', 'descend'],
@@ -434,12 +426,12 @@ const IngredientList: React.FC = () => {
         <span className="text-[#14933E] font-bold text-xs">{price}</span>
       ),
       sorter: (a: Ingredient, b: Ingredient) => {
-        // Trích xuất giá trị số từ chuỗi giá (loại bỏ "đ" và phân tích)
+        // Extract numeric value from price string (remove "đ" and parse)
         const parsePrice = (priceStr: string) => {
           if (!priceStr) return 0;
-          // Loại bỏ "đ" và các ký tự không phải số ngoại trừ dấu chấm và phẩy
+          // Remove "đ" and any non-numeric characters except dots and commas
           const cleanPrice = priceStr.replace(/[^\d.,]/g, '');
-          // Thay thế phẩy bằng chấm để phân tích số thập phân
+          // Replace comma with dot for decimal parsing
           const normalizedPrice = cleanPrice.replace(',', '.');
           return parseFloat(normalizedPrice) || 0;
         };
@@ -491,7 +483,7 @@ const IngredientList: React.FC = () => {
 
       {/* Title */}
       <h1 className="text-2xl font-bold text-[#222222] mb-3 flex-shrink-0">
-        Danh sách nguyên liệu
+        Danh sách sản phẩm
       </h1>
 
       {/* Search and Export Section */}
@@ -531,14 +523,14 @@ const IngredientList: React.FC = () => {
       <div className="bg-white border border-[rgba(0,0,0,0.16)] rounded-xl overflow-hidden flex-1 flex flex-col">
         <div className="flex-1 overflow-auto">
           <Table
-            key={ingredients.length} // Force re-render when ingredients change
+            key={products.length} // Force re-render when products change
             columns={columns}
             dataSource={paginatedData}
             rowKey="id"
             scroll={{ x: 1200, y: 'calc(100vh - 450px)' }}
             pagination={{
               current: currentPage,
-              total: filteredIngredients.length,
+              total: filteredProducts.length,
               pageSize: pageSize,
               showSizeChanger: false,
               onChange: (page) => {
@@ -565,11 +557,11 @@ const IngredientList: React.FC = () => {
 
 
       {/* Modal */}
-      <AddIngredientModal
+      <AddProductModal
         visible={isModalVisible}
         onCancel={handleCancel}
-        onOk={handleAddIngredient}
-        editingIngredient={editingIngredient}
+        onOk={handleAddProduct}
+        editingProduct={editingProduct}
       />
 
       {/* Image Modal */}
@@ -584,7 +576,7 @@ const IngredientList: React.FC = () => {
         <div className="text-center">
           <Image
             src={selectedImage}
-            alt="Hình ảnh nguyên liệu"
+            alt="Hình ảnh sản phẩm"
             className="max-w-full max-h-96 mx-auto rounded-lg"
             fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMIAAADDCAYAAADQvc6UAAABRWlDQ1BJQ0MgUHJvZmlsZQAAKJFjYGASSSwoyGFhYGDIzSspCnJ3UoiIjFJgf8LAwSDCIMogwMCcmFxc4BgQ4ANUwgCjUcG3awyMIPqyLsis7PPOq3QdDFcvjV3jOD1boQVTPQrgSkktTgbSf4A4LbmgqISBgTEFyFYuLykAsTuAbJEioKOA7DkgdjqEvQHEToKwj4DVhAQ5A9k3gGyB5IxEoBmML4BsnSQk8XQkNtReEOBxcfXxUQg1Mjc0dyHgXNJBSWpFCYh2zi+oLMpMzyhRcASGUqqCZ16yno6CkYGRAQMDKMwhqj/fAIcloxgHQqxAjIHBEugw5sUIsSQpBobtQPdL83LEVKYRYGQaJvxVYGFiXCHcD6jaEzFDYH4G+1aQMjHXlGFjSbmS+Aw8rSwPFVwqbNnK3dJGDYQcA=="
           />
@@ -596,7 +588,7 @@ const IngredientList: React.FC = () => {
         visible={deleteModalVisible}
         onCancel={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        ingredientName={ingredientToDelete?.name || ""}
+        ingredientName={productToDelete?.name || ""}
         loading={deleteLoading}
       />
 
@@ -612,5 +604,4 @@ const IngredientList: React.FC = () => {
   );
 };
 
-export default IngredientList;
-
+export default ProductList;

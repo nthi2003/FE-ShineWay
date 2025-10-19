@@ -4,6 +4,8 @@ import { ArrowLeftOutlined, PlusOutlined, SearchOutlined } from "@ant-design/ico
 import { Link, useNavigate } from "react-router-dom";
 import type { Category, Ingredient } from "../types/index.ts";
 import { fakeCategories } from "../data/categories.ts";
+import { fakeIngredients } from "../data/ingredients.ts";
+import { fakeProducts } from "../data/products.ts";
 import AddCategoryModal from "../components/AddCategoryModal.tsx";
 import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
 
@@ -12,14 +14,14 @@ const { Search } = Input;
 const CategoryList: React.FC = () => {
   const navigate = useNavigate();
   
-  // Load từ localStorage hoặc dùng fakeCategories
+  // Tải từ localStorage hoặc sử dụng fakeCategories
   const loadCategories = () => {
     const saved = localStorage.getItem('categories');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Error loading categories:', e);
+        console.error('Lỗi khi tải danh mục:', e);
         return fakeCategories;
       }
     }
@@ -39,46 +41,62 @@ const CategoryList: React.FC = () => {
     onClose: () => setNotification(prev => ({ ...prev, visible: false }))
   });
 
-  // Debug modal state
+  // Debug trạng thái modal
   React.useEffect(() => {
     console.log('Modal visible:', isModalVisible);
     console.log('Editing category:', editingCategory);
   }, [isModalVisible, editingCategory]);
 
-  // Load ingredients to calculate product count
+  // Tải nguyên liệu và sản phẩm để tính số lượng sản phẩm
   const loadIngredients = () => {
-    const saved = localStorage.getItem('ingredients');
-    if (saved) {
+    const savedIngredients = localStorage.getItem('ingredients');
+    const savedProducts = localStorage.getItem('products');
+    
+    let ingredients = [];
+    let products = [];
+    
+    if (savedIngredients) {
       try {
-        return JSON.parse(saved);
+        ingredients = JSON.parse(savedIngredients);
       } catch (e) {
-        return [];
+        ingredients = fakeIngredients;
       }
+    } else {
+      ingredients = fakeIngredients;
     }
-    return [];
+    
+    if (savedProducts) {
+      try {
+        products = JSON.parse(savedProducts);
+      } catch (e) {
+        products = fakeProducts;
+      }
+    } else {
+      products = fakeProducts;
+    }
+    
+    // Kết hợp nguyên liệu và sản phẩm để đếm
+    return [...ingredients, ...products];
   };
 
-  const [allIngredients, setAllIngredients] = useState(loadIngredients());
+  const allIngredients = loadIngredients();
 
-  // Function to get product count for a category
+  // Hàm lấy số lượng sản phẩm cho một danh mục
   const getProductCount = (categoryName: string) => {
     const count = allIngredients.filter((ingredient: Ingredient) => ingredient.category === categoryName).length;
-    console.log(`Product count for "${categoryName}":`, count);
+    console.log(`Số lượng sản phẩm cho "${categoryName}":`, count, 'từ', allIngredients.length, 'tổng số mục');
+    console.log('Tất cả danh mục nguyên liệu:', allIngredients.map(i => i.category));
     return count;
   };
 
-  // Reload ingredients when localStorage changes
-  useEffect(() => {
-    setAllIngredients(loadIngredients());
-  }, []);
 
-  // Lưu vào localStorage mỗi khi categories thay đổi
+  // Lưu vào localStorage mỗi khi danh mục thay đổi
   useEffect(() => {
     localStorage.setItem('categories', JSON.stringify(categories));
-    console.log('Saved to localStorage:', categories.length, 'categories');
+    console.log('Đã lưu vào localStorage:', categories.length, 'danh mục');
   }, [categories]);
 
-  // Filter categories based on search
+  // Lọc danh mục dựa trên tìm kiếm
   const filteredCategories = useMemo(() => {
     return categories.filter((item) =>
       item.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -89,13 +107,13 @@ const CategoryList: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = filteredCategories.slice(startIndex, startIndex + pageSize);
 
-  // Calculate totals
+  // Tính tổng
   const totalProducts = categories.reduce((sum, cat) => sum + getProductCount(cat.name), 0);
 
   const handleAddCategory = (categoryData: Omit<Category, "id">) => {
     try {
       if (editingCategory) {
-        // Edit existing category
+        // Chỉnh sửa danh mục hiện có
         setCategories((prev) =>
           prev.map((item) =>
             item.id === editingCategory.id
@@ -111,7 +129,7 @@ const CategoryList: React.FC = () => {
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Add new category
+        // Thêm danh mục mới
         const newCategory: Category = {
           ...categoryData,
           id: Date.now().toString(),
@@ -153,10 +171,10 @@ const CategoryList: React.FC = () => {
   };
 
   const handleEdit = (record: Category) => {
-    console.log('Edit clicked for category:', record);
+    console.log('Nhấp chỉnh sửa cho danh mục:', record);
     setEditingCategory(record);
     setIsModalVisible(true);
-    console.log('Modal should be visible now');
+    console.log('Modal bây giờ sẽ hiển thị');
   };
 
   const handleCancel = () => {
@@ -203,7 +221,51 @@ const CategoryList: React.FC = () => {
       key: "createdDate",
       align: "center",
       width: 120,
-      render: (date: string) => <span className="text-[#222222]">{date}</span>,
+      render: (date: string) => {
+        // Định dạng ngày thành DD/MM/YYYY với zero-padding
+        const formatDate = (dateStr: string) => {
+          if (!dateStr || dateStr === "N/A") return dateStr;
+          
+          // Nếu đã ở định dạng DD/MM/YYYY, đảm bảo zero-padding
+          if (dateStr.includes('/') && dateStr.split('/').length === 3) {
+            const parts = dateStr.split('/');
+            const [day, month, year] = parts;
+            const paddedDay = day?.padStart(2, '0') || day;
+            const paddedMonth = month?.padStart(2, '0') || month;
+            return `${paddedDay}/${paddedMonth}/${year}`;
+          }
+          
+          // Nếu ở định dạng YYYY-MM-DD, chuyển đổi thành DD/MM/YYYY với zero-padding
+          if (dateStr.includes('-') && dateStr.split('-').length === 3) {
+            const parts = dateStr.split('-');
+            const [year, month, day] = parts;
+            const paddedDay = day?.padStart(2, '0') || day;
+            const paddedMonth = month?.padStart(2, '0') || month;
+            return `${paddedDay}/${paddedMonth}/${year}`;
+          }
+          
+          return dateStr;
+        };
+        
+        return <span className="text-[#222222]">{formatDate(date)}</span>;
+      },
+      sorter: (a: Category, b: Category) => {
+        // Chuyển đổi DD/MM/YYYY thành Date để so sánh
+        const parseDate = (dateStr: string) => {
+          if (!dateStr || dateStr === "N/A") return new Date(0); // Ngày không hợp lệ sẽ đặt ở đầu
+          const parts = dateStr.split('/');
+          if (parts.length === 3) {
+            const [day, month, year] = parts;
+            return new Date(parseInt(year || '0'), parseInt(month || '1') - 1, parseInt(day || '1'));
+          }
+          return new Date(0);
+        };
+        
+        const dateA = parseDate(a.createdDate || '');
+        const dateB = parseDate(b.createdDate || '');
+        return dateA.getTime() - dateB.getTime();
+      },
+      sortDirections: ['ascend', 'descend'],
     },
     {
       title: "Hành động",

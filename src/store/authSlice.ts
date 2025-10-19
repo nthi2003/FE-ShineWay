@@ -7,7 +7,7 @@ export interface AuthState {
 }
 
 const initialState: AuthState = {
-  permissions: null, // Persist sẽ xử lý lưu trữ
+  permissions: null, // Redux Persist sẽ xử lý lưu trữ
 };
 
 const authSlice = createSlice({

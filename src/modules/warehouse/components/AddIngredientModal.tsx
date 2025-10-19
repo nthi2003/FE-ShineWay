@@ -30,10 +30,17 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     try {
       setLoading(true);
       const values = await form.validateFields();
-      onOk(values);
+      
+      // Định dạng giá để bao gồm hậu tố "đ"
+      const formattedValues = {
+        ...values,
+        price: values.price ? `${values.price}đ` : values.price
+      };
+      
+      onOk(formattedValues);
       form.resetFields();
     } catch (error) {
-      console.error("Validation failed:", error);
+      console.error("Xác thực thất bại:", error);
     } finally {
       setLoading(false);
     }
@@ -51,17 +58,17 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     form.setFieldsValue({ category: categoryName });
   };
 
-  // Initialize selectedCategory and importDate when editing
+  // Khởi tạo selectedCategory và importDate khi chỉnh sửa
   React.useEffect(() => {
     if (editingIngredient) {
       if (editingIngredient.category) {
         setSelectedCategory(editingIngredient.category);
       }
       
-      // Convert DD/MM/YYYY to YYYY-MM-DD for date input
+      // Chuyển đổi DD/MM/YYYY thành YYYY-MM-DD cho input ngày
       if (editingIngredient.importDate) {
         const convertDateFormat = (dateStr: string) => {
-          // Check if date is in DD/MM/YYYY format
+          // Kiểm tra xem ngày có ở định dạng DD/MM/YYYY không
           if (dateStr.includes('/')) {
             const parts = dateStr.split('/');
             if (parts.length === 3) {
@@ -69,12 +76,27 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               return `${year}-${month?.padStart(2, '0')}-${day?.padStart(2, '0')}`;
             }
           }
-          return dateStr; // Return as is if already in correct format
+          return dateStr; // Trả về như cũ nếu đã ở định dạng đúng
         };
         
         const convertedDate = convertDateFormat(editingIngredient.importDate);
-        console.log('Converting date:', editingIngredient.importDate, '->', convertedDate);
+        console.log('Chuyển đổi ngày:', editingIngredient.importDate, '->', convertedDate);
         form.setFieldsValue({ importDate: convertedDate });
+      }
+      
+      // Chuyển đổi giá từ "20.000đ" thành "20000" cho InputNumber
+      if (editingIngredient.price) {
+        const convertPrice = (priceStr: string) => {
+          // Loại bỏ "đ" và các ký tự không phải số ngoại trừ dấu chấm và phẩy
+          const cleanPrice = priceStr.replace(/[^\d.,]/g, '');
+          // Thay thế phẩy bằng chấm để phân tích số thập phân
+          const normalizedPrice = cleanPrice.replace(',', '.');
+          return parseFloat(normalizedPrice) || 0;
+        };
+        
+        const numericPrice = convertPrice(editingIngredient.price);
+        console.log('Chuyển đổi giá:', editingIngredient.price, '->', numericPrice);
+        form.setFieldsValue({ price: numericPrice });
       }
     }
   }, [editingIngredient, form]);
@@ -115,7 +137,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     showUploadList: false,
     beforeUpload: (file) => {
       handleFileChange(file);
-      return false; // Prevent auto upload
+      return false; // Ngăn chặn tự động upload
     },
   };
 
@@ -140,7 +162,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         className="px-4"
       >
         <Row gutter={24}>
-          {/* Cột trái */}
+          {/* Cột bên trái */}
           <Col span={12}>
             <Form.Item
               name="name"
@@ -159,23 +181,43 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
             >
               <div className="flex flex-wrap gap-2">
-                {fakeCategories.map((category) => {
+                {[
+                  { name: 'Rau', color: 'green' },
+                  { name: 'Hải sản', color: 'blue' },
+                  { name: 'Thịt', color: 'red' },
+                  { name: 'Lương thực', color: 'orange' }
+                ].map((category) => {
                   const isSelected = selectedCategory === category.name;
+                  const getColorClasses = (color: string, selected: boolean) => {
+                    switch (color) {
+                      case 'green':
+                        return selected 
+                          ? 'bg-[#22C55E] border-[#22C55E] text-white' 
+                          : 'border-[#22C55E] text-[#22C55E] bg-white';
+                      case 'blue':
+                        return selected 
+                          ? 'bg-[#3B82F6] border-[#3B82F6] text-white' 
+                          : 'border-[#3B82F6] text-[#3B82F6] bg-white';
+                      case 'red':
+                        return selected 
+                          ? 'bg-[#EF4444] border-[#EF4444] text-white' 
+                          : 'border-[#EF4444] text-[#EF4444] bg-white';
+                      case 'orange':
+                        return selected 
+                          ? 'bg-[#F59E0B] border-[#F59E0B] text-white' 
+                          : 'border-[#F59E0B] text-[#F59E0B] bg-white';
+                      default:
+                        return selected 
+                          ? 'bg-[#14933E] border-[#14933E] text-white' 
+                          : 'border-[#14933E] text-[#14933E] bg-white';
+                    }
+                  };
+                  
                   return (
                     <Button
-                      key={category.id}
+                      key={category.name}
                       type="default"
-                      className={`rounded border px-4 py-2 ${
-                        isSelected 
-                          ? category.name === 'Rau' ? 'bg-[#14933e] border-[#14933e] text-white' :
-                            category.name === 'Hải sản' ? 'bg-[#0088ff] border-[#0088ff] text-white' :
-                            category.name === 'Thịt' ? 'bg-[#ff5f57] border-[#ff5f57] text-white' :
-                            'bg-[#febc2f] border-[#febc2f] text-white'
-                          : category.name === 'Rau' ? 'border-[#14933e] text-[#14933e] bg-white' :
-                            category.name === 'Hải sản' ? 'border-[#0088ff] text-[#1870bd] bg-white' :
-                            category.name === 'Thịt' ? 'border-[#ff5f57] text-[#ff383c] bg-white' :
-                            'border-[#febc2f] text-[#febc2f] bg-white'
-                      }`}
+                      className={`rounded border px-4 py-2 ${getColorClasses(category.color, isSelected)}`}
                       onClick={() => handleCategorySelect(category.name)}
                     >
                       {category.name}
@@ -247,16 +289,22 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             </Form.Item>
           </Col>
 
-          {/* Cột phải */}
+          {/* Cột bên phải */}
           <Col span={12}>
             <Form.Item
               name="price"
               label={<span className="font-bold text-black">Đơn giá :</span>}
               rules={[{ required: true, message: "Vui lòng nhập giá" }]}
             >
-              <Input 
-                placeholder="Nhập giá (VD: 20.000đ)" 
-                className="rounded-md border-gray-300"
+              <InputNumber
+                min={0}
+                placeholder="Nhập giá"
+                className="w-full rounded-md border-gray-300"
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+                addonAfter="đ"
+                style={{ width: '100%' }}
+                controls={false}
               />
             </Form.Item>
 
