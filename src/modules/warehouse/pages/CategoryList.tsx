@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Table, Button, Input, Space, message } from "antd";
-import { ArrowLeftOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, CalendarOutlined, EditOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import type { Category, Ingredient } from "../types/index.ts";
 import { fakeCategories } from "../data/categories.ts";
@@ -8,20 +8,21 @@ import { fakeIngredients } from "../data/ingredients.ts";
 import { fakeProducts } from "../data/products.ts";
 import AddCategoryModal from "../components/AddCategoryModal.tsx";
 import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
+import { addHistoryEvent } from "../utils/history.ts";
 
 const { Search } = Input;
 
 const CategoryList: React.FC = () => {
   const navigate = useNavigate();
   
-  // Tải từ localStorage hoặc sử dụng fakeCategories
+  // Load từ localStorage hoặc dùng fakeCategories
   const loadCategories = () => {
     const saved = localStorage.getItem('categories');
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        console.error('Lỗi khi tải danh mục:', e);
+        console.error('Error loading categories:', e);
         return fakeCategories;
       }
     }
@@ -41,13 +42,13 @@ const CategoryList: React.FC = () => {
     onClose: () => setNotification(prev => ({ ...prev, visible: false }))
   });
 
-  // Debug trạng thái modal
+  // Debug modal state
   React.useEffect(() => {
     console.log('Modal visible:', isModalVisible);
     console.log('Editing category:', editingCategory);
   }, [isModalVisible, editingCategory]);
 
-  // Tải nguyên liệu và sản phẩm để tính số lượng sản phẩm
+  // Load ingredients and products to calculate product count
   const loadIngredients = () => {
     const savedIngredients = localStorage.getItem('ingredients');
     const savedProducts = localStorage.getItem('products');
@@ -75,28 +76,28 @@ const CategoryList: React.FC = () => {
       products = fakeProducts;
     }
     
-    // Kết hợp nguyên liệu và sản phẩm để đếm
+    // Combine ingredients and products for counting
     return [...ingredients, ...products];
   };
 
   const allIngredients = loadIngredients();
 
-  // Hàm lấy số lượng sản phẩm cho một danh mục
+  // Function to get product count for a category
   const getProductCount = (categoryName: string) => {
     const count = allIngredients.filter((ingredient: Ingredient) => ingredient.category === categoryName).length;
-    console.log(`Số lượng sản phẩm cho "${categoryName}":`, count, 'từ', allIngredients.length, 'tổng số mục');
-    console.log('Tất cả danh mục nguyên liệu:', allIngredients.map(i => i.category));
+    console.log(`Product count for "${categoryName}":`, count, 'from', allIngredients.length, 'total items');
+    console.log('All ingredients categories:', allIngredients.map(i => i.category));
     return count;
   };
 
 
-  // Lưu vào localStorage mỗi khi danh mục thay đổi
+  // Lưu vào localStorage mỗi khi categories thay đổi
   useEffect(() => {
     localStorage.setItem('categories', JSON.stringify(categories));
-    console.log('Đã lưu vào localStorage:', categories.length, 'danh mục');
+    console.log('Saved to localStorage:', categories.length, 'categories');
   }, [categories]);
 
-  // Lọc danh mục dựa trên tìm kiếm
+  // Filter categories based on search
   const filteredCategories = useMemo(() => {
     return categories.filter((item) =>
       item.name.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -107,13 +108,15 @@ const CategoryList: React.FC = () => {
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedData = filteredCategories.slice(startIndex, startIndex + pageSize);
 
-  // Tính tổng
+  // Calculate totals
   const totalProducts = categories.reduce((sum, cat) => sum + getProductCount(cat.name), 0);
+  
+  // Trang quản lý phân loại không cần hiển thị trạng thái tồn kho
 
   const handleAddCategory = (categoryData: Omit<Category, "id">) => {
     try {
       if (editingCategory) {
-        // Chỉnh sửa danh mục hiện có
+        // Edit existing category
         setCategories((prev) =>
           prev.map((item) =>
             item.id === editingCategory.id
@@ -122,6 +125,15 @@ const CategoryList: React.FC = () => {
           )
         );
         setEditingCategory(null);
+        addHistoryEvent({
+          type: "update",
+          entityType: "category",
+          entityId: editingCategory.id,
+          entityName: categoryData.name,
+          actor: "Người dùng",
+          before: editingCategory as any,
+          after: { ...categoryData, id: editingCategory.id } as any,
+        });
         setNotification({
           type: 'success',
           message: `Đã cập nhật danh mục "${categoryData.name}" thành công!`,
@@ -129,12 +141,20 @@ const CategoryList: React.FC = () => {
           onClose: () => setNotification(prev => ({ ...prev, visible: false }))
         });
       } else {
-        // Thêm danh mục mới
+        // Add new category
         const newCategory: Category = {
           ...categoryData,
           id: Date.now().toString(),
         };
         setCategories([...categories, newCategory]);
+        addHistoryEvent({
+          type: "create",
+          entityType: "category",
+          entityId: newCategory.id,
+          entityName: newCategory.name,
+          actor: "Người dùng",
+          after: newCategory as any,
+        });
         setNotification({
           type: 'success',
           message: `Đã thêm danh mục "${categoryData.name}" thành công!`,
@@ -157,6 +177,14 @@ const CategoryList: React.FC = () => {
     const category = categories.find(item => item.id === id);
     if (category && window.confirm(`Bạn có chắc muốn xóa danh mục "${category.name}"?`)) {
       setCategories((prev) => prev.filter((item) => item.id !== id));
+      addHistoryEvent({
+        type: "delete",
+        entityType: "category",
+        entityId: category.id,
+        entityName: category.name,
+        actor: "Người dùng",
+        before: category as any,
+      });
       setNotification({
         type: 'success',
         message: `Đã xóa danh mục "${category.name}" thành công!`,
@@ -171,10 +199,10 @@ const CategoryList: React.FC = () => {
   };
 
   const handleEdit = (record: Category) => {
-    console.log('Nhấp chỉnh sửa cho danh mục:', record);
+    console.log('Edit clicked for category:', record);
     setEditingCategory(record);
     setIsModalVisible(true);
-    console.log('Modal bây giờ sẽ hiển thị');
+    console.log('Modal should be visible now');
   };
 
   const handleCancel = () => {
@@ -222,11 +250,11 @@ const CategoryList: React.FC = () => {
       align: "center",
       width: 120,
       render: (date: string) => {
-        // Định dạng ngày thành DD/MM/YYYY với zero-padding
+        // Format date to DD/MM/YYYY with zero-padding
         const formatDate = (dateStr: string) => {
           if (!dateStr || dateStr === "N/A") return dateStr;
           
-          // Nếu đã ở định dạng DD/MM/YYYY, đảm bảo zero-padding
+          // If already in DD/MM/YYYY format, ensure zero-padding
           if (dateStr.includes('/') && dateStr.split('/').length === 3) {
             const parts = dateStr.split('/');
             const [day, month, year] = parts;
@@ -235,7 +263,7 @@ const CategoryList: React.FC = () => {
             return `${paddedDay}/${paddedMonth}/${year}`;
           }
           
-          // Nếu ở định dạng YYYY-MM-DD, chuyển đổi thành DD/MM/YYYY với zero-padding
+          // If in YYYY-MM-DD format, convert to DD/MM/YYYY with zero-padding
           if (dateStr.includes('-') && dateStr.split('-').length === 3) {
             const parts = dateStr.split('-');
             const [year, month, day] = parts;
@@ -247,12 +275,18 @@ const CategoryList: React.FC = () => {
           return dateStr;
         };
         
-        return <span className="text-[#222222]">{formatDate(date)}</span>;
+        const value = formatDate(date);
+        return (
+          <span className="inline-flex items-center gap-1 justify-center text-[#222222]">
+            <CalendarOutlined />
+            {value}
+          </span>
+        );
       },
       sorter: (a: Category, b: Category) => {
-        // Chuyển đổi DD/MM/YYYY thành Date để so sánh
+        // Convert DD/MM/YYYY to Date for comparison
         const parseDate = (dateStr: string) => {
-          if (!dateStr || dateStr === "N/A") return new Date(0); // Ngày không hợp lệ sẽ đặt ở đầu
+          if (!dateStr || dateStr === "N/A") return new Date(0); // Invalid dates go to beginning
           const parts = dateStr.split('/');
           if (parts.length === 3) {
             const [day, month, year] = parts;
@@ -277,6 +311,7 @@ const CategoryList: React.FC = () => {
           <Button
             size="small"
             className="bg-[#14933e] border-[#14933e] text-white font-bold text-xs hover:bg-[#14933e] hover:border-[#14933e]"
+            icon={<EyeOutlined />}
             onClick={() => handleView(record)}
           >
             Xem
@@ -285,6 +320,7 @@ const CategoryList: React.FC = () => {
             type="primary"
             size="small"
             className="bg-[#5296e5] border-[#5296e5] text-white font-bold text-xs"
+            icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
             Sửa
@@ -292,6 +328,7 @@ const CategoryList: React.FC = () => {
           <Button
             size="small"
             className="bg-[#ff5f57] border-[#ff5f57] text-white font-bold text-xs hover:bg-[#ff5f57] hover:border-[#ff5f57]"
+            icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
             Xóa
@@ -318,7 +355,7 @@ const CategoryList: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="flex gap-4 mb-4 flex-shrink-0">
-        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px]">
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px] h-[120px] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[#222222] font-bold text-xs">Tổng danh mục</p>
             <div className="bg-gray-100 p-2 rounded">
@@ -327,7 +364,7 @@ const CategoryList: React.FC = () => {
           </div>
           <p className="text-[#222222] font-bold text-4xl">{categories.length}</p>
         </div>
-        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px]">
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px] h-[120px] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[#222222] font-bold text-xs">Tổng sản phẩm</p>
             <div className="bg-gray-100 p-2 rounded">
@@ -336,6 +373,7 @@ const CategoryList: React.FC = () => {
           </div>
           <p className="text-[#222222] font-bold text-4xl">{totalProducts}</p>
         </div>
+        {/* Ẩn các card tồn kho ở trang danh sách phân loại theo yêu cầu */}
       </div>
 
       {/* Search and Add Button */}

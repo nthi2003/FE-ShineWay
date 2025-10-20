@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Modal, Form, Input, Select, InputNumber, Button, Space, Row, Col, Upload, message } from "antd";
-import { UploadOutlined, InboxOutlined } from "@ant-design/icons";
+import { UploadOutlined, InboxOutlined, PlusCircleOutlined, EditOutlined, CloudUploadOutlined, TagOutlined, UserOutlined, CalendarOutlined, CloseOutlined, SaveOutlined } from "@ant-design/icons";
 import type { Ingredient } from "../types/index.ts";
 import { fakeSuppliers } from "../data/ingredients.ts";
 import type { UploadProps } from "antd";
@@ -90,13 +90,32 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
     }
   }, [editingIngredient, categoryName, form]);
 
+  // Reset form when modal opens/closes
+  React.useEffect(() => {
+    if (!visible) {
+      form.resetFields();
+      setImagePreview(null);
+      setSelectedStatus('');
+    }
+  }, [visible, form]);
+
   const handleFileChange = (file: File) => {
+    // Kiểm tra kích thước file (tối đa 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      message.error('Kích thước file không được vượt quá 5MB!');
+      return;
+    }
+
     if (file && file.type.startsWith('image/')) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setImagePreview(result);
         form.setFieldsValue({ image: result });
+      };
+      reader.onerror = () => {
+        message.error('Lỗi khi đọc file!');
       };
       reader.readAsDataURL(file);
     } else {
@@ -133,8 +152,15 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
   return (
     <Modal
       title={
-        <div className="text-[#0088ff] text-[32px] font-bold">
-          {editingIngredient ? "Sửa nguyên liệu" : "Thêm nguyên liệu mới"}
+        <div className="flex items-center gap-3">
+          {editingIngredient ? (
+            <EditOutlined className="text-[#0088ff] text-2xl" />
+          ) : (
+            <PlusCircleOutlined className="text-[#0088ff] text-2xl" />
+          )}
+          <span className="text-[#0088ff] text-[28px] font-bold">
+            {editingIngredient ? "Sửa nguyên liệu" : "Thêm nguyên liệu mới"}
+          </span>
         </div>
       }
       open={visible}
@@ -156,11 +182,16 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             <Form.Item
               name="name"
               label={<span className="font-bold text-black">Tên :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập tên nguyên liệu" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập tên nguyên liệu" },
+                { min: 2, message: "Tên nguyên liệu phải có ít nhất 2 ký tự" },
+                { max: 100, message: "Tên nguyên liệu không được vượt quá 100 ký tự" }
+              ]}
             >
               <Input 
                 placeholder="Nhập tên nguyên liệu" 
                 className="rounded-md border-gray-300"
+                prefix={<TagOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
@@ -200,6 +231,7 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
               <Input 
                 placeholder="Nhập tên người nhập" 
                 className="rounded-md border-gray-300"
+                prefix={<UserOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
@@ -221,24 +253,28 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
                   }}
                 />
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-md p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-[#0088ff] hover:bg-blue-50"
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onClick={handleClick}
                 >
                   {imagePreview ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <img 
                         src={imagePreview} 
                         alt="Preview" 
-                        className="max-w-full max-h-32 mx-auto rounded"
+                        className="max-w-full max-h-32 mx-auto rounded-lg shadow-sm"
                       />
-                      <div className="text-sm text-gray-500">Click để thay đổi ảnh</div>
+                      <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                        <EditOutlined />
+                        Click để thay đổi ảnh
+                      </div>
                     </div>
                   ) : (
                     <div className="text-gray-500">
-                      <InboxOutlined className="text-4xl mb-2 block mx-auto" />
-                      <div>Kéo thả hình ảnh vào đây hoặc click để chọn</div>
+                      <CloudUploadOutlined className="text-5xl mb-3 block mx-auto" />
+                      <div className="text-base font-medium">Kéo thả hình ảnh vào đây</div>
+                      <div className="text-sm">hoặc <span className="text-[#0088ff] font-medium">click để chọn</span></div>
                     </div>
                   )}
                 </div>
@@ -251,14 +287,21 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             <Form.Item
               name="price"
               label={<span className="font-bold text-black">Đơn giá :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập giá" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập giá" },
+                { type: 'number', min: 0, message: "Giá phải lớn hơn hoặc bằng 0" }
+              ]}
             >
               <InputNumber
                 min={0}
                 placeholder="Nhập giá"
                 className="w-full rounded-md border-gray-300"
                 formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
+                parser={(value) => {
+                  const parsed = value?.replace(/\$\s?|(,*)/g, '') || '0';
+                  const numValue = parseFloat(parsed) || 0;
+                  return numValue as any;
+                }}
                 addonAfter="đ"
                 style={{ width: '100%' }}
               />
@@ -267,7 +310,10 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             <Form.Item
               name="quantity"
               label={<span className="font-bold text-black">Số lượng :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập số lượng" }]}
+              rules={[
+                { required: true, message: "Vui lòng nhập số lượng" },
+                { type: 'number', min: 0, message: "Số lượng phải lớn hơn hoặc bằng 0" }
+              ]}
             >
               <InputNumber
                 min={0}
@@ -311,16 +357,18 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
                 type="date"
                 placeholder="Chọn ngày nhập" 
                 className="rounded-md border-gray-300"
+                prefix={<CalendarOutlined className="text-gray-400" />}
               />
             </Form.Item>
           </Col>
         </Row>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
           <Button
             onClick={handleCancel}
-            className="border-[#5296e5] text-[#5296e5] rounded-md px-6"
+            className="border-gray-300 text-gray-600 rounded-md px-6"
+            icon={<CloseOutlined />}
           >
             Hủy
           </Button>
@@ -328,7 +376,8 @@ const AddIngredientModalForCategory: React.FC<AddIngredientModalForCategoryProps
             type="primary"
             onClick={handleOk}
             loading={loading}
-            className="bg-[#5296e5] border-[#5296e5] rounded-md px-6"
+            className="bg-[#5296e5] border-[#5296e5] rounded-md px-6 shadow-md"
+            icon={<SaveOutlined />}
           >
             {editingIngredient ? "Cập nhật" : "Thêm mới"}
           </Button>

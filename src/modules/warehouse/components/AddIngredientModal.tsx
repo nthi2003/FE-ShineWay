@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { Modal, Form, Input, Select, InputNumber, Button, Space, Row, Col, Upload, message } from "antd";
-import { UploadOutlined, InboxOutlined } from "@ant-design/icons";
+import { UploadOutlined, InboxOutlined, PlusCircleOutlined, EditOutlined, CloudUploadOutlined, TagOutlined, UserOutlined, TeamOutlined, CloseOutlined, SaveOutlined } from "@ant-design/icons";
 import type { Ingredient } from "../types/index.ts";
 import { fakeCategories, fakeSuppliers } from "../data/ingredients.ts";
 import type { UploadProps } from "antd";
@@ -31,7 +31,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       setLoading(true);
       const values = await form.validateFields();
       
-      // Định dạng giá để bao gồm hậu tố "đ"
+      // Format price to include "đ" suffix
       const formattedValues = {
         ...values,
         price: values.price ? `${values.price}đ` : values.price
@@ -40,7 +40,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
       onOk(formattedValues);
       form.resetFields();
     } catch (error) {
-      console.error("Xác thực thất bại:", error);
+      console.error("Validation failed:", error);
     } finally {
       setLoading(false);
     }
@@ -58,17 +58,17 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     form.setFieldsValue({ category: categoryName });
   };
 
-  // Khởi tạo selectedCategory và importDate khi chỉnh sửa
+  // Initialize selectedCategory and importDate when editing
   React.useEffect(() => {
     if (editingIngredient) {
       if (editingIngredient.category) {
         setSelectedCategory(editingIngredient.category);
       }
       
-      // Chuyển đổi DD/MM/YYYY thành YYYY-MM-DD cho input ngày
+      // Convert DD/MM/YYYY to YYYY-MM-DD for date input
       if (editingIngredient.importDate) {
         const convertDateFormat = (dateStr: string) => {
-          // Kiểm tra xem ngày có ở định dạng DD/MM/YYYY không
+          // Check if date is in DD/MM/YYYY format
           if (dateStr.includes('/')) {
             const parts = dateStr.split('/');
             if (parts.length === 3) {
@@ -76,26 +76,26 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               return `${year}-${month?.padStart(2, '0')}-${day?.padStart(2, '0')}`;
             }
           }
-          return dateStr; // Trả về như cũ nếu đã ở định dạng đúng
+          return dateStr; // Return as is if already in correct format
         };
         
         const convertedDate = convertDateFormat(editingIngredient.importDate);
-        console.log('Chuyển đổi ngày:', editingIngredient.importDate, '->', convertedDate);
+        console.log('Converting date:', editingIngredient.importDate, '->', convertedDate);
         form.setFieldsValue({ importDate: convertedDate });
       }
       
-      // Chuyển đổi giá từ "20.000đ" thành "20000" cho InputNumber
+      // Convert price from "20.000đ" to "20000" for InputNumber
       if (editingIngredient.price) {
         const convertPrice = (priceStr: string) => {
-          // Loại bỏ "đ" và các ký tự không phải số ngoại trừ dấu chấm và phẩy
+          // Remove "đ" and any non-numeric characters except dots and commas
           const cleanPrice = priceStr.replace(/[^\d.,]/g, '');
-          // Thay thế phẩy bằng chấm để phân tích số thập phân
+          // Replace comma with dot for decimal parsing
           const normalizedPrice = cleanPrice.replace(',', '.');
           return parseFloat(normalizedPrice) || 0;
         };
         
         const numericPrice = convertPrice(editingIngredient.price);
-        console.log('Chuyển đổi giá:', editingIngredient.price, '->', numericPrice);
+        console.log('Converting price:', editingIngredient.price, '->', numericPrice);
         form.setFieldsValue({ price: numericPrice });
       }
     }
@@ -137,15 +137,22 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
     showUploadList: false,
     beforeUpload: (file) => {
       handleFileChange(file);
-      return false; // Ngăn chặn tự động upload
+      return false; // Prevent auto upload
     },
   };
 
   return (
     <Modal
       title={
-        <div className="text-[#0088ff] text-[32px] font-bold">
-          {editingIngredient ? "Sửa nguyên liệu" : "Thêm nguyên liệu mới"}
+        <div className="flex items-center gap-3">
+          {editingIngredient ? (
+            <EditOutlined className="text-[#0088ff] text-2xl" />
+          ) : (
+            <PlusCircleOutlined className="text-[#0088ff] text-2xl" />
+          )}
+          <span className="text-[#0088ff] text-[28px] font-bold">
+            {editingIngredient ? "Sửa nguyên liệu" : "Thêm nguyên liệu mới"}
+          </span>
         </div>
       }
       open={visible}
@@ -162,7 +169,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         className="px-4"
       >
         <Row gutter={24}>
-          {/* Cột bên trái */}
+          {/* Cột trái */}
           <Col span={12}>
             <Form.Item
               name="name"
@@ -172,6 +179,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               <Input 
                 placeholder="Nhập tên nguyên liệu" 
                 className="rounded-md border-gray-300"
+                prefix={<TagOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
@@ -234,6 +242,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               <Input 
                 placeholder="Nhập tên người nhập" 
                 className="rounded-md border-gray-300"
+                prefix={<UserOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
@@ -244,6 +253,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
               <Input 
                 placeholder="Nhập tên nhân viên" 
                 className="rounded-md border-gray-300"
+                prefix={<TeamOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
@@ -264,24 +274,28 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
                   }}
                 />
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-md p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-[#0088ff] hover:bg-blue-50"
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onClick={handleClick}
                 >
                   {imagePreview ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <img 
                         src={imagePreview} 
                         alt="Preview" 
-                        className="max-w-full max-h-32 mx-auto rounded"
+                        className="max-w-full max-h-32 mx-auto rounded-lg shadow-sm"
                       />
-                      <div className="text-sm text-gray-500">Click để thay đổi ảnh</div>
+                      <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                        <EditOutlined />
+                        Click để thay đổi ảnh
+                      </div>
                     </div>
                   ) : (
                     <div className="text-gray-500">
-                      <InboxOutlined className="text-4xl mb-2 block mx-auto" />
-                      <div>Kéo thả hình ảnh vào đây hoặc click để chọn</div>
+                      <CloudUploadOutlined className="text-5xl mb-3 block mx-auto" />
+                      <div className="text-base font-medium">Kéo thả hình ảnh vào đây</div>
+                      <div className="text-sm">hoặc <span className="text-[#0088ff] font-medium">click để chọn</span></div>
                     </div>
                   )}
                 </div>
@@ -289,7 +303,7 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             </Form.Item>
           </Col>
 
-          {/* Cột bên phải */}
+          {/* Cột phải */}
           <Col span={12}>
             <Form.Item
               name="price"
@@ -361,10 +375,11 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
         </Row>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
           <Button
             onClick={handleCancel}
-            className="border-[#5296e5] text-[#5296e5] rounded-md px-6"
+            className="border-gray-300 text-gray-600 rounded-md px-6"
+            icon={<CloseOutlined />}
           >
             Hủy
           </Button>
@@ -372,7 +387,8 @@ const AddIngredientModal: React.FC<AddIngredientModalProps> = ({
             type="primary"
             onClick={handleOk}
             loading={loading}
-            className="bg-[#5296e5] border-[#5296e5] rounded-md px-6"
+            className="bg-[#5296e5] border-[#5296e5] rounded-md px-6 shadow-md"
+            icon={<SaveOutlined />}
           >
             {editingIngredient ? "Cập nhật" : "Thêm mới"}
           </Button>

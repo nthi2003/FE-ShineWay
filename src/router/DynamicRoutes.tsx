@@ -13,6 +13,8 @@ import IngredientList from "../modules/warehouse/pages/IngredientList.tsx";
 import CategoryList from "../modules/warehouse/pages/CategoryList.tsx";
 import CategoryDetail from "../modules/warehouse/pages/CategoryDetail.tsx";
 import ProductList from "../modules/warehouse/pages/ProductList.tsx";
+import WarehouseHistory from "../modules/warehouse/pages/History.tsx";
+import ExitHandler from "../components/ExitHandler.tsx";
 
 // import CategoryPage from '../pages/CategoryPage';
 // import ProductPage from '../pages/ProductPage';
@@ -29,11 +31,12 @@ const pageMap: { [key: string]: React.FC } = {
    '/kho/danh-sach-nguyen-lieu': IngredientList,
    '/kho/phan-loai': CategoryList,
    '/kho/san-pham': ProductList,
+   '/kho/lich-su': WarehouseHistory,
 };
 
 const DynamicRoutes: React.FC = () => {
    const permissions = useSelector((state: RootState) => state.auth.permissions);
-   console.log('DynamicRoutes - Quyền:', permissions); // Debug để kiểm tra
+   console.log('DynamicRoutes - Permissions:', permissions); // Debug để kiểm tra
 
    if (!permissions) {
       return (
@@ -44,7 +47,7 @@ const DynamicRoutes: React.FC = () => {
       );
    }
 
-   // Tìm sub-item cho "Thông tin nhân viên" để kiểm tra quyền xem cho chi tiết
+   // Tìm sub-item cho "Thông tin nhân viên" để kiểm tra permissions.view cho detail
    const employeeSubItem = permissions.menus
       .flatMap((menu) => menu.subItems)
       .find((sub) => sub.url === '/nhan-su/thong-tin-nhan-vien');
@@ -53,8 +56,8 @@ const DynamicRoutes: React.FC = () => {
       <Routes>
          <Route path="/login" element={<Navigate to="/" replace />} />
          <Route element={<AppLayout />}>
-            {/* AppLayout bao bọc tất cả routes sau đăng nhập */}
-            <Route path="/" element={<HomePage />} /> {/* Trang chủ chỉ có Header + Menu, không có sidebar */}
+            {/* AppLayout wrap tất cả routes sau login */}
+            <Route path="/" element={<HomePage />} /> {/* Home chỉ Header + Menu, không sidebar */}
             {permissions.menus.map((menu) => (
                <Route key={menu.url} path={menu.url} element={<Navigate to={menu.subItems[0]?.url || '/'} replace />} />
             ))}
@@ -62,18 +65,20 @@ const DynamicRoutes: React.FC = () => {
                menu.subItems.map((sub) => {
                   const PageComponent = pageMap[sub.url];
                   if (!PageComponent) {
-                     console.warn(`Không có component cho sub URL: ${sub.url}`); // Debug thiếu
+                     console.warn(`No component for sub URL: ${sub.url}`); // Debug missing
                      return null;
                   }
                   return <Route key={sub.url} path={sub.url} element={<PageComponent />} />;
                }),
             )}
-            {/* Route động chi tiết nhân viên: Chỉ render nếu có quyền xem */}
+            {/* Route động chi tiết nhân viên: Chỉ render nếu có permissions.view */}
             {employeeSubItem?.permissions.view && (
                <Route path={`${employeeSubItem.url}/:employeeId`} element={<EmployeeDetail />} />
             )}
             {/* Route chi tiết danh mục */}
             <Route path="/kho/phan-loai/:categoryId/:categoryName" element={<CategoryDetail />} />
+            {/* Route thoát về trang chủ */}
+            <Route path="/kho/thoat" element={<ExitHandler />} />
             <Route path="*" element={<div>404 Not Found</div>} />
          </Route>
       </Routes>
