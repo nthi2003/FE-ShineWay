@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Table, Button, Input, Space, message } from "antd";
-import { ArrowLeftOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined, PlusOutlined, SearchOutlined, CalendarOutlined, EditOutlined, EyeOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Link, useNavigate } from "react-router-dom";
 import type { Category, Ingredient } from "../types/index.ts";
 import { fakeCategories } from "../data/categories.ts";
@@ -8,6 +8,7 @@ import { fakeIngredients } from "../data/ingredients.ts";
 import { fakeProducts } from "../data/products.ts";
 import AddCategoryModal from "../components/AddCategoryModal.tsx";
 import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
+import { addHistoryEvent } from "../utils/history.ts";
 
 const { Search } = Input;
 
@@ -109,6 +110,8 @@ const CategoryList: React.FC = () => {
 
   // Calculate totals
   const totalProducts = categories.reduce((sum, cat) => sum + getProductCount(cat.name), 0);
+  
+  // Trang quản lý phân loại không cần hiển thị trạng thái tồn kho
 
   const handleAddCategory = (categoryData: Omit<Category, "id">) => {
     try {
@@ -122,6 +125,15 @@ const CategoryList: React.FC = () => {
           )
         );
         setEditingCategory(null);
+        addHistoryEvent({
+          type: "update",
+          entityType: "category",
+          entityId: editingCategory.id,
+          entityName: categoryData.name,
+          actor: "Người dùng",
+          before: editingCategory as any,
+          after: { ...categoryData, id: editingCategory.id } as any,
+        });
         setNotification({
           type: 'success',
           message: `Đã cập nhật danh mục "${categoryData.name}" thành công!`,
@@ -135,6 +147,14 @@ const CategoryList: React.FC = () => {
           id: Date.now().toString(),
         };
         setCategories([...categories, newCategory]);
+        addHistoryEvent({
+          type: "create",
+          entityType: "category",
+          entityId: newCategory.id,
+          entityName: newCategory.name,
+          actor: "Người dùng",
+          after: newCategory as any,
+        });
         setNotification({
           type: 'success',
           message: `Đã thêm danh mục "${categoryData.name}" thành công!`,
@@ -157,6 +177,14 @@ const CategoryList: React.FC = () => {
     const category = categories.find(item => item.id === id);
     if (category && window.confirm(`Bạn có chắc muốn xóa danh mục "${category.name}"?`)) {
       setCategories((prev) => prev.filter((item) => item.id !== id));
+      addHistoryEvent({
+        type: "delete",
+        entityType: "category",
+        entityId: category.id,
+        entityName: category.name,
+        actor: "Người dùng",
+        before: category as any,
+      });
       setNotification({
         type: 'success',
         message: `Đã xóa danh mục "${category.name}" thành công!`,
@@ -247,7 +275,13 @@ const CategoryList: React.FC = () => {
           return dateStr;
         };
         
-        return <span className="text-[#222222]">{formatDate(date)}</span>;
+        const value = formatDate(date);
+        return (
+          <span className="inline-flex items-center gap-1 justify-center text-[#222222]">
+            <CalendarOutlined />
+            {value}
+          </span>
+        );
       },
       sorter: (a: Category, b: Category) => {
         // Convert DD/MM/YYYY to Date for comparison
@@ -277,6 +311,7 @@ const CategoryList: React.FC = () => {
           <Button
             size="small"
             className="bg-[#14933e] border-[#14933e] text-white font-bold text-xs hover:bg-[#14933e] hover:border-[#14933e]"
+            icon={<EyeOutlined />}
             onClick={() => handleView(record)}
           >
             Xem
@@ -285,6 +320,7 @@ const CategoryList: React.FC = () => {
             type="primary"
             size="small"
             className="bg-[#5296e5] border-[#5296e5] text-white font-bold text-xs"
+            icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
             Sửa
@@ -292,6 +328,7 @@ const CategoryList: React.FC = () => {
           <Button
             size="small"
             className="bg-[#ff5f57] border-[#ff5f57] text-white font-bold text-xs hover:bg-[#ff5f57] hover:border-[#ff5f57]"
+            icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
             Xóa
@@ -318,7 +355,7 @@ const CategoryList: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="flex gap-4 mb-4 flex-shrink-0">
-        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px]">
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px] h-[120px] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[#222222] font-bold text-xs">Tổng danh mục</p>
             <div className="bg-gray-100 p-2 rounded">
@@ -327,7 +364,7 @@ const CategoryList: React.FC = () => {
           </div>
           <p className="text-[#222222] font-bold text-4xl">{categories.length}</p>
         </div>
-        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px]">
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px] h-[120px] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <p className="text-[#222222] font-bold text-xs">Tổng sản phẩm</p>
             <div className="bg-gray-100 p-2 rounded">
@@ -336,6 +373,7 @@ const CategoryList: React.FC = () => {
           </div>
           <p className="text-[#222222] font-bold text-4xl">{totalProducts}</p>
         </div>
+        {/* Ẩn các card tồn kho ở trang danh sách phân loại theo yêu cầu */}
       </div>
 
       {/* Search and Add Button */}

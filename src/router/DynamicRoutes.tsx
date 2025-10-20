@@ -13,6 +13,7 @@ import IngredientList from "../modules/warehouse/pages/IngredientList.tsx";
 import CategoryList from "../modules/warehouse/pages/CategoryList.tsx";
 import CategoryDetail from "../modules/warehouse/pages/CategoryDetail.tsx";
 import ProductList from "../modules/warehouse/pages/ProductList.tsx";
+import WarehouseHistory from "../modules/warehouse/pages/History.tsx";
 import ExitHandler from "../components/ExitHandler.tsx";
 
 // import CategoryPage from '../pages/CategoryPage';
@@ -30,6 +31,7 @@ const pageMap: { [key: string]: React.FC } = {
    '/kho/danh-sach-nguyen-lieu': IngredientList,
    '/kho/phan-loai': CategoryList,
    '/kho/san-pham': ProductList,
+   '/kho/lich-su': WarehouseHistory,
 };
 
 const DynamicRoutes: React.FC = () => {

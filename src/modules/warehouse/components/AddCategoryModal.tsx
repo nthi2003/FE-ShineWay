@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 import { Modal, Form, Input, Button } from "antd";
+import { 
+  PlusCircleOutlined, 
+  EditOutlined, 
+  TagOutlined, 
+  FileTextOutlined, 
+  CalendarOutlined, 
+  CloseOutlined, 
+  SaveOutlined 
+} from "@ant-design/icons";
 import type { Category } from "../types/index.ts";
 
 const { TextArea } = Input;
@@ -98,8 +107,15 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
   return (
     <Modal
       title={
-        <div className="text-[#0088ff] text-[32px] font-bold">
-          {editingCategory ? "Sửa danh mục" : "Thêm danh mục mới"}
+        <div className="flex items-center gap-3">
+          {editingCategory ? (
+            <EditOutlined className="text-[#0088ff] text-2xl" />
+          ) : (
+            <PlusCircleOutlined className="text-[#0088ff] text-2xl" />
+          )}
+          <span className="text-[#0088ff] text-[28px] font-bold">
+            {editingCategory ? "Sửa danh mục" : "Thêm danh mục mới"}
+          </span>
         </div>
       }
       open={visible}
@@ -107,6 +123,7 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       width={600}
       footer={null}
       className="custom-modal"
+      centered
     >
       <Form
         form={form}
@@ -116,47 +133,60 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
       >
         <Form.Item
           name="name"
-          label={<span className="font-bold text-black">Tên danh mục :</span>}
-          rules={[{ required: true, message: "Vui lòng nhập tên danh mục" }]}
+          label={<span className="font-bold text-gray-700">Tên danh mục *</span>}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên danh mục" },
+            { min: 2, message: "Tên danh mục phải có ít nhất 2 ký tự" },
+            { max: 50, message: "Tên danh mục không được vượt quá 50 ký tự" }
+          ]}
         >
           <Input 
             placeholder="Nhập tên danh mục" 
-            className="rounded-md border-gray-300"
+            className="rounded-lg border-gray-300 focus:border-[#0088ff] focus:shadow-sm"
             size="large"
+            prefix={<TagOutlined className="text-gray-400" />}
           />
         </Form.Item>
 
         <Form.Item
           name="description"
-          label={<span className="font-bold text-black">Mô tả :</span>}
-          rules={[{ required: true, message: "Vui lòng nhập mô tả" }]}
+          label={<span className="font-bold text-gray-700">Mô tả *</span>}
+          rules={[
+            { required: true, message: "Vui lòng nhập mô tả" },
+            { min: 10, message: "Mô tả phải có ít nhất 10 ký tự" },
+            { max: 200, message: "Mô tả không được vượt quá 200 ký tự" }
+          ]}
         >
           <TextArea 
             placeholder="Nhập mô tả danh mục"
-            className="rounded-md border-gray-300"
+            className="rounded-lg border-gray-300 focus:border-[#0088ff] focus:shadow-sm"
             rows={4}
+            showCount
+            maxLength={200}
           />
         </Form.Item>
 
         <Form.Item
           name="createdDate"
-          label={<span className="font-bold text-black">Ngày tạo :</span>}
+          label={<span className="font-bold text-gray-700">Ngày tạo</span>}
         >
           <Input 
             type="date"
             placeholder="Chọn ngày tạo" 
-            className="rounded-md border-gray-300"
+            className="rounded-lg border-gray-300 focus:border-[#0088ff] focus:shadow-sm"
             size="large"
+            prefix={<CalendarOutlined className="text-gray-400" />}
             disabled={!editingCategory} // Chỉ cho phép chỉnh sửa khi đang edit
           />
         </Form.Item>
 
         {/* Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
           <Button
             onClick={handleCancel}
-            className="border-[#5296e5] text-[#5296e5] rounded-md px-6"
+            className="border-gray-300 text-gray-600 rounded-lg px-8 py-3 hover:bg-gray-50"
             size="large"
+            icon={<CloseOutlined />}
           >
             Hủy
           </Button>
@@ -164,8 +194,9 @@ const AddCategoryModal: React.FC<AddCategoryModalProps> = ({
             type="primary"
             onClick={handleOk}
             loading={loading}
-            className="bg-[#5296e5] border-[#5296e5] rounded-md px-6"
+            className="bg-[#0088ff] border-[#0088ff] rounded-lg px-8 py-3 shadow-md hover:shadow-lg"
             size="large"
+            icon={<SaveOutlined />}
           >
             {editingCategory ? "Cập nhật" : "Thêm mới"}
           </Button>

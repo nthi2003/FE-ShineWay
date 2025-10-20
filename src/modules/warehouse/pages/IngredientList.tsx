@@ -1,6 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Table, Button, Input, Space, message, Modal, Image } from "antd";
-import { ArrowLeftOutlined, PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  PlusOutlined,
+  EyeOutlined,
+  SearchOutlined,
+  TagOutlined,
+  CalendarOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 // import type { ColumnsType } from "antd";
 import type { Ingredient } from "../types/index.ts";
@@ -9,6 +18,7 @@ import AddIngredientModal from "../components/AddIngredientModal.tsx";
 import ExportDropdown from "../components/ExportDropdown.tsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.tsx";
 import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
+import { addHistoryEvent } from "../utils/history.ts";
 import { exportToExcel, exportToPDF } from '../utils/exportUtils.ts';
 
 const { Search } = Input;
@@ -104,6 +114,15 @@ const IngredientList: React.FC = () => {
               : item
           )
         );
+        addHistoryEvent({
+          type: "update",
+          entityType: "product",
+          entityId: editingIngredient.id,
+          entityName: ingredientData.name,
+          actor: "Người dùng",
+          before: editingIngredient as any,
+          after: { ...ingredientData, id: editingIngredient.id, importDate: formattedDate } as any,
+        });
         setEditingIngredient(null);
         setNotification({
           type: 'success',
@@ -153,6 +172,14 @@ const IngredientList: React.FC = () => {
           console.log('New ingredient added:', newIngredient);
           return updated;
         });
+        addHistoryEvent({
+          type: "create",
+          entityType: "product",
+          entityId: newIngredient.id,
+          entityName: newIngredient.name,
+          actor: "Người dùng",
+          after: newIngredient as any,
+        });
         setNotification({
           type: 'success',
           message: `Đã thêm nguyên liệu "${ingredientData.name}" thành công!`,
@@ -193,6 +220,14 @@ const IngredientList: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setIngredients((prev) => prev.filter((item) => item.id !== ingredientToDelete.id));
+      addHistoryEvent({
+        type: "delete",
+        entityType: "product",
+        entityId: ingredientToDelete.id,
+        entityName: ingredientToDelete.name,
+        actor: "Người dùng",
+        before: ingredientToDelete as any,
+      });
       message.success(`Đã xóa nguyên liệu "${ingredientToDelete.name}" thành công!`);
       setDeleteModalVisible(false);
       setIngredientToDelete(null);
@@ -336,7 +371,8 @@ const IngredientList: React.FC = () => {
         const colors = getCategoryColor(category);
         
         return (
-          <span className={`px-3 py-1 border ${colors.border} ${colors.text} ${colors.bg} rounded text-xs font-bold`}>
+          <span className={`px-3 py-1 border ${colors.border} ${colors.text} ${colors.bg} rounded text-xs font-bold flex items-center gap-1 justify-center`}>
+            <TagOutlined />
             {category}
           </span>
         );
@@ -388,7 +424,13 @@ const IngredientList: React.FC = () => {
           return dateStr;
         };
         
-        return formatDate(importDate) || "N/A";
+        const value = formatDate(importDate) || "N/A";
+        return (
+          <span className="inline-flex items-center gap-1 justify-center">
+            <CalendarOutlined />
+            {value}
+          </span>
+        );
       },
       sorter: (a: Ingredient, b: Ingredient) => {
         // Convert DD/MM/YYYY to Date for comparison
@@ -397,7 +439,11 @@ const IngredientList: React.FC = () => {
           const parts = dateStr.split('/');
           if (parts.length === 3) {
             const [day, month, year] = parts;
-            return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            // Ensure valid strings for parseInt to satisfy TS and avoid NaN
+            const y = (year ?? '0');
+            const m = (month ?? '1');
+            const d = (day ?? '1');
+            return new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
           }
           return new Date(0);
         };
@@ -462,6 +508,7 @@ const IngredientList: React.FC = () => {
             type="primary"
             size="small"
             className="bg-[#5296E5] border-[#5296E5] text-white font-bold text-xs"
+            icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
             Sửa
@@ -470,6 +517,7 @@ const IngredientList: React.FC = () => {
             type="default"
             size="small"
             className="bg-[#FF5F57] border-[#FF5F57] text-white font-bold text-xs hover:bg-[#FF5F57] hover:border-[#FF5F57]"
+            icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
             Xóa
@@ -501,6 +549,7 @@ const IngredientList: React.FC = () => {
             <Search
               placeholder="Bạn cần gì ?"
               allowClear
+              prefix={<SearchOutlined className="text-gray-400" />}
               onChange={(e) => {
                 setSearchText(e.target.value);
                 setCurrentPage(1);

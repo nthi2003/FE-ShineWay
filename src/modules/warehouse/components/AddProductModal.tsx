@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Modal, Form, Input, Button, Row, Col, InputNumber } from "antd";
+import React, { useState, useEffect, useRef } from "react";
+import { Modal, Form, Input, Button, Row, Col, InputNumber, Select, message } from "antd";
+import { PlusCircleOutlined, EditOutlined, CloudUploadOutlined, TagOutlined, UserOutlined, TeamOutlined, CloseOutlined, SaveOutlined } from "@ant-design/icons";
 import type { Ingredient } from "../types/index.ts";
+const { Option } = Select;
 
 interface AddProductModalProps {
   visible: boolean;
@@ -18,6 +20,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCategorySelect = (categoryName: string) => {
     setSelectedCategory(categoryName);
@@ -36,6 +40,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
       onOk(formattedValues);
       form.resetFields();
+      setImagePreview(null);
+      setSelectedCategory("");
     } catch (error) {
       console.error("Validation failed:", error);
     } finally {
@@ -46,6 +52,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   const handleCancel = () => {
     form.resetFields();
     setSelectedCategory("");
+    setImagePreview(null);
     onCancel();
   };
 
@@ -92,21 +99,68 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         category: editingProduct.category,
         quantity: editingProduct.quantity,
         unit: editingProduct.unit,
-        description: editingProduct.description,
         supplier: editingProduct.supplier,
-        expiryDate: editingProduct.expiryDate,
-        status: editingProduct.status,
-        employee: editingProduct.employee,
       });
+      if (editingProduct.image) {
+        setImagePreview(editingProduct.image as any);
+      }
     } else if (!visible) {
       form.resetFields();
       setSelectedCategory("");
+      setImagePreview(null);
     }
   }, [editingProduct, visible, form]);
 
+  const handleFileChange = (file: File) => {
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setImagePreview(result);
+        form.setFieldsValue({ image: result });
+      };
+      reader.onerror = () => message.error('Lỗi khi đọc file!');
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        message.error('Kích thước file không được vượt quá 5MB!');
+        return;
+      }
+      reader.readAsDataURL(file);
+    } else {
+      message.error('Vui lòng chọn file ảnh hợp lệ!');
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files.length > 0 && files[0]) {
+      handleFileChange(files[0]);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <Modal
-      title={editingProduct ? "Sửa sản phẩm" : "Thêm sản phẩm"}
+      title={
+        <div className="flex items-center gap-3">
+          {editingProduct ? (
+            <EditOutlined className="text-[#0088ff] text-2xl" />
+          ) : (
+            <PlusCircleOutlined className="text-[#0088ff] text-2xl" />
+          )}
+          <span className="text-[#0088ff] text-[28px] font-bold">
+            {editingProduct ? "Sửa sản phẩm" : "Thêm sản phẩm mới"}
+          </span>
+        </div>
+      }
       open={visible}
       onCancel={handleCancel}
       width={800}
@@ -131,6 +185,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               <Input 
                 placeholder="Nhập tên sản phẩm" 
                 className="rounded-md border-gray-300"
+                prefix={<TagOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
@@ -184,48 +239,93 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
             <Form.Item
               name="supplier"
               label={<span className="font-bold text-black">Người nhập :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập người nhập" }]}
             >
               <Input 
                 placeholder="Nhập tên người nhập" 
                 className="rounded-md border-gray-300"
+                prefix={<UserOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
             <Form.Item
               name="employee"
               label={<span className="font-bold text-black">Kiểm kho :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập người kiểm kho" }]}
             >
               <Input 
-                placeholder="Nhập tên người kiểm kho" 
+                placeholder="Nhập tên nhân viên" 
                 className="rounded-md border-gray-300"
+                prefix={<TeamOutlined className="text-gray-400" />}
               />
             </Form.Item>
 
+            {/* Hình ảnh moved to match AddIngredientModal layout */}
             <Form.Item
-              name="importDate"
-              label={<span className="font-bold text-black">Ngày nhập :</span>}
-              rules={[{ required: true, message: "Vui lòng chọn ngày nhập" }]}
+              name="image"
+              label={<span className="font-bold text-black">Hình ảnh :</span>}
             >
-              <Input
-                type="date"
-                placeholder="Chọn ngày nhập"
-                className="rounded-md border-gray-300"
-              />
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      handleFileChange(e.target.files[0]);
+                    }
+                  }}
+                />
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer transition-colors hover:border-[#0088ff] hover:bg-blue-50"
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onClick={handleClick}
+                >
+                  {imagePreview ? (
+                    <div className="space-y-3">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="max-w-full max-h-32 mx-auto rounded-lg shadow-sm"
+                      />
+                      <div className="text-sm text-gray-500 flex items-center justify-center gap-2">
+                        <EditOutlined />
+                        Click để thay đổi ảnh
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">
+                      <CloudUploadOutlined className="text-5xl mb-3 block mx-auto" />
+                      <div className="text-base font-medium">Kéo thả hình ảnh vào đây</div>
+                      <div className="text-sm">hoặc <span className="text-[#0088ff] font-medium">click để chọn</span></div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </Form.Item>
           </Col>
 
           {/* Cột phải */}
           <Col span={12}>
+            {/* Right column starts with Price to match layout */}
             <Form.Item
-              name="image"
-              label={<span className="font-bold text-black">Hình ảnh :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập hình ảnh" }]}
+              name="price"
+              label={<span className="font-bold text-black">Đơn giá :</span>}
+              rules={[{ required: true, message: "Vui lòng nhập giá" }]}
             >
-              <Input 
-                placeholder="Nhập emoji hoặc URL hình ảnh" 
-                className="rounded-md border-gray-300"
+              <InputNumber
+                min={0}
+                placeholder="Nhập giá"
+                className="w-full rounded-md border-gray-300"
+                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => {
+                  const parsed = value?.replace(/\$\s?|(,*)/g, '') || '0';
+                  const num = parseFloat(parsed) || 0;
+                  return num as any;
+                }}
+                addonAfter="đ"
+                style={{ width: '100%' }}
+                controls={false}
               />
             </Form.Item>
 
@@ -244,97 +344,60 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
             <Form.Item
               name="unit"
-              label={<span className="font-bold text-black">Đơn vị :</span>}
+              label={<span className="font-bold text-black">Đơn vị tính :</span>}
               rules={[{ required: true, message: "Vui lòng chọn đơn vị" }]}
             >
+              <Select 
+                placeholder="Chọn đơn vị" 
+                className="rounded-md"
+                suffixIcon={<span className="text-gray-400">▼</span>}
+              >
+                <Option value="kg">kg</Option>
+                <Option value="lít">lít</Option>
+                <Option value="hộp">hộp</Option>
+                <Option value="gói">gói</Option>
+                <Option value="bịch">bịch</Option>
+                <Option value="thùng">thùng</Option>
+                <Option value="túi">túi</Option>
+                <Option value="chai">chai</Option>
+                <Option value="lọ">lọ</Option>
+              </Select>
+            </Form.Item>
+
+            {/* Import date moved to right column as last item */}
+            <Form.Item
+              name="importDate"
+              label={<span className="font-bold text-black">Ngày nhập :</span>}
+              rules={[{ required: true, message: "Vui lòng chọn ngày nhập" }]}
+            >
               <Input 
-                placeholder="Nhập đơn vị (chai, kg, lít...)" 
-                className="rounded-md border-gray-300"
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="price"
-              label={<span className="font-bold text-black">Đơn giá :</span>}
-              rules={[{ required: true, message: "Vui lòng nhập giá" }]}
-            >
-              <InputNumber
-                min={0}
-                placeholder="Nhập giá"
-                className="w-full rounded-md border-gray-300"
-                formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value!.replace(/\$\s?|(,*)/g, '')}
-                addonAfter="đ"
-                style={{ width: '100%' }}
-                controls={false}
-              />
-            </Form.Item>
-
-            <Form.Item
-              name="expiryDate"
-              label={<span className="font-bold text-black">Hạn sử dụng :</span>}
-            >
-              <Input
                 type="date"
-                placeholder="Chọn hạn sử dụng"
+                placeholder="Chọn ngày nhập" 
                 className="rounded-md border-gray-300"
               />
             </Form.Item>
+
+            {/* Removed description, expiry date, and status as per request */}
           </Col>
         </Row>
 
-        <Form.Item
-          name="description"
-          label={<span className="font-bold text-black">Mô tả :</span>}
-        >
-          <Input.TextArea 
-            placeholder="Nhập mô tả sản phẩm" 
-            className="rounded-md border-gray-300"
-            rows={3}
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="status"
-          label={<span className="font-bold text-black">Trạng thái :</span>}
-          rules={[{ required: true, message: "Vui lòng chọn trạng thái" }]}
-        >
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'active', label: 'Còn hàng', selectedClass: 'bg-[#14933e] border-[#14933e] text-white', unselectedClass: 'border-[#14933e] text-[#14933e] bg-white' },
-              { value: 'low_stock', label: 'Sắp hết', selectedClass: 'bg-[#febc2f] border-[#febc2f] text-white', unselectedClass: 'border-[#febc2f] text-[#febc2f] bg-white' },
-              { value: 'expired', label: 'Đã hết', selectedClass: 'bg-[#ff383c] border-[#ff383c] text-white', unselectedClass: 'border-[#ff383c] text-[#ff383c] bg-white' }
-            ].map((status) => {
-              const isSelected = form.getFieldValue('status') === status.value;
-              return (
-                <Button
-                  key={status.value}
-                  type="default"
-                  className={`rounded border px-4 py-2 ${
-                    isSelected ? status.selectedClass : status.unselectedClass
-                  }`}
-                  onClick={() => {
-                    form.setFieldsValue({ status: status.value });
-                  }}
-                >
-                  {status.label}
-                </Button>
-              );
-            })}
-          </div>
-        </Form.Item>
-
-        <div className="flex justify-end gap-2 mt-6">
-          <Button onClick={handleCancel} className="px-6">
+        {/* Buttons */}
+        <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-200">
+          <Button
+            onClick={handleCancel}
+            className="border-gray-300 text-gray-600 rounded-md px-6"
+            icon={<CloseOutlined />}
+          >
             Hủy
           </Button>
           <Button
             type="primary"
             onClick={handleOk}
             loading={loading}
-            className="bg-[#14933E] border-[#14933E] text-white px-6"
+            className="bg-[#5296e5] border-[#5296e5] rounded-md px-6 shadow-md"
+            icon={<SaveOutlined />}
           >
-            {editingProduct ? "Cập nhật" : "Thêm"}
+            {editingProduct ? "Cập nhật" : "Thêm mới"}
           </Button>
         </div>
       </Form>

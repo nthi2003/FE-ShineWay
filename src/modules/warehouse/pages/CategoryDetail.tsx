@@ -407,15 +407,13 @@ const CategoryDetail: React.FC = () => {
           </div>
           <p className="text-[#222222] font-bold text-4xl">{lowStockProducts}</p>
         </div>
-        {outOfStockProducts > 0 && (
-          <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px] h-[120px] flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[#222222] font-bold text-xs">Đã hết hàng</p>
-              <div className="bg-[#ff383c] w-3 h-3 rounded-full"></div>
-            </div>
-            <p className="text-[#222222] font-bold text-4xl">{outOfStockProducts}</p>
+        <div className="bg-white border border-[#e0dbdb] rounded-xl p-4 w-[234px] h-[120px] flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[#222222] font-bold text-xs">Hết hàng</p>
+            <div className="bg-[#ff383c] w-3 h-3 rounded-full"></div>
           </div>
-        )}
+          <p className="text-[#222222] font-bold text-4xl">{outOfStockProducts}</p>
+        </div>
       </div>
 
       {/* Search and Add Button */}

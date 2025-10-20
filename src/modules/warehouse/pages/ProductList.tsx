@@ -1,6 +1,15 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Table, Button, Input, Space, message, Modal, Image } from "antd";
-import { ArrowLeftOutlined, PlusOutlined, EyeOutlined } from "@ant-design/icons";
+import {
+  ArrowLeftOutlined,
+  PlusOutlined,
+  EyeOutlined,
+  SearchOutlined,
+  TagOutlined,
+  CalendarOutlined,
+  EditOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { Link } from "react-router-dom";
 // import type { ColumnsType } from "antd";
 import type { Ingredient } from "../types/index.ts";
@@ -9,6 +18,7 @@ import AddProductModal from "../components/AddProductModal.tsx";
 import ExportDropdown from "../components/ExportDropdown.tsx";
 import DeleteConfirmationModal from "../components/DeleteConfirmationModal.tsx";
 import Notification, { type NotificationProps } from "../../../components/Notification.tsx";
+import { addHistoryEvent } from "../utils/history.ts";
 import { exportToExcel, exportToPDF } from '../utils/exportUtils.ts';
 
 const { Search } = Input;
@@ -104,6 +114,15 @@ const ProductList: React.FC = () => {
               : item
           )
         );
+        addHistoryEvent({
+          type: "update",
+          entityType: "product",
+          entityId: editingProduct.id,
+          entityName: productData.name,
+          actor: "Người dùng",
+          before: editingProduct as any,
+          after: { ...productData, id: editingProduct.id, importDate: formattedDate } as any,
+        });
         setEditingProduct(null);
         setNotification({
           type: 'success',
@@ -152,6 +171,14 @@ const ProductList: React.FC = () => {
           console.log('Updated products list:', updated);
           return updated;
         });
+        addHistoryEvent({
+          type: "create",
+          entityType: "product",
+          entityId: newProduct.id,
+          entityName: newProduct.name,
+          actor: "Người dùng",
+          after: newProduct as any,
+        });
         setNotification({
           type: 'success',
           message: `Đã thêm sản phẩm "${productData.name}" thành công!`,
@@ -192,6 +219,14 @@ const ProductList: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setProducts((prev) => prev.filter((item) => item.id !== productToDelete.id));
+      addHistoryEvent({
+        type: "delete",
+        entityType: "product",
+        entityId: productToDelete.id,
+        entityName: productToDelete.name,
+        actor: "Người dùng",
+        before: productToDelete as any,
+      });
       message.success(`Đã xóa sản phẩm "${productToDelete.name}" thành công!`);
       setDeleteModalVisible(false);
       setProductToDelete(null);
@@ -328,7 +363,8 @@ const ProductList: React.FC = () => {
         const colors = getCategoryColor(category);
         
         return (
-          <span className={`px-3 py-1 border ${colors.border} ${colors.text} ${colors.bg} rounded text-xs font-bold`}>
+          <span className={`px-3 py-1 border ${colors.border} ${colors.text} ${colors.bg} rounded text-xs font-bold flex items-center gap-1 justify-center`}>
+            <TagOutlined />
             {category}
           </span>
         );
@@ -380,7 +416,13 @@ const ProductList: React.FC = () => {
           return dateStr;
         };
         
-        return formatDate(importDate) || "N/A";
+        const value = formatDate(importDate) || "N/A";
+        return (
+          <span className="inline-flex items-center gap-1 justify-center">
+            <CalendarOutlined />
+            {value}
+          </span>
+        );
       },
       sorter: (a: Ingredient, b: Ingredient) => {
         // Convert DD/MM/YYYY to Date for comparison
@@ -454,6 +496,7 @@ const ProductList: React.FC = () => {
             type="primary"
             size="small"
             className="bg-[#5296E5] border-[#5296E5] text-white font-bold text-xs"
+            icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           >
             Sửa
@@ -462,6 +505,7 @@ const ProductList: React.FC = () => {
             type="default"
             size="small"
             className="bg-[#FF5F57] border-[#FF5F57] text-white font-bold text-xs hover:bg-[#FF5F57] hover:border-[#FF5F57]"
+            icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
           >
             Xóa
@@ -493,6 +537,7 @@ const ProductList: React.FC = () => {
             <Search
               placeholder="Bạn cần gì ?"
               allowClear
+              prefix={<SearchOutlined className="text-gray-400" />}
               onChange={(e) => {
                 setSearchText(e.target.value);
                 setCurrentPage(1);
